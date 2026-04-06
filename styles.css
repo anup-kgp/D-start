@@ -961,11 +961,6 @@ a {
   line-height: 1.7;
 }
 
-.payment-info {
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
 .terms-check {
   display: flex;
   align-items: flex-start;

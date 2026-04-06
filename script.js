@@ -18,19 +18,7 @@ const successCard = document.getElementById("successCard");
 const genderSelect = document.getElementById("genderSelect");
 const submitButton = form ? form.querySelector("button[type=\"submit\"]") : null;
 const submitStatus = document.getElementById("submitStatus");
-const paymentInfo = document.getElementById("paymentInfo");
 
-const PAYMENT_LINKS = {
-  Female: "https://rzp.io/rzp/tAqBmteu",
-  Male: "https://rzp.io/rzp/g2rBBZg",
-};
-const PAYMENT_TEST_LINK = "https://rzp.io/rzp/hxHd7Je";
-const USE_TEST_PAYMENT = true;
-
-function getPaymentLink(gender) {
-  if (USE_TEST_PAYMENT) return PAYMENT_TEST_LINK;
-  return PAYMENT_LINKS[gender] || "";
-}
 
 const EMAILJS_SERVICE_ID = "service_oelo1t3";
 const EMAILJS_TEMPLATE_ID = "template_t3lut81";
@@ -97,25 +85,6 @@ if (form && formResult) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const genderValue = genderSelect ? genderSelect.value : "";
-    const paymentLink = getPaymentLink(genderValue);
-    const paymentFlagKey = `payment_done_${genderValue || "unknown"}`;
-    const paymentDone = sessionStorage.getItem(paymentFlagKey) === "true";
-    if (!paymentDone) {
-      if (paymentLink) {
-        window.open(paymentLink, "_blank", "noopener");
-        sessionStorage.setItem(paymentFlagKey, "true");
-        if (submitStatus) {
-          submitStatus.textContent = "Complete payment in the new tab, then click Submit again.";
-          submitStatus.classList.add("is-loading");
-          setTimeout(() => submitStatus.classList.remove("is-loading"), 1500);
-        }
-      } else if (paymentInfo) {
-        paymentInfo.textContent = "Select gender to load payment link.";
-      }
-      return;
-    }
-
     const formData = new FormData(form);
     const name = formData.get("name");
     const gender = formData.get("gender");
@@ -151,7 +120,6 @@ if (form && formResult) {
         submitStatus.textContent = "Saving your registration...";
       }
       const fee = gender === "Female" ? 250 : 350;
-      const paymentLinkUsed = getPaymentLink(gender);
       const payload = {
         name: String(name || "").trim(),
         nameLower: String(name || "").trim().toLowerCase(),
@@ -165,8 +133,6 @@ if (form && formResult) {
         tshirtSize: String(formData.get("tshirtSize") || "").trim(),
         fee,
         regNumber,
-        paymentLink: paymentLinkUsed,
-        paymentConfirmed: true,
         photoUrl: photoUrl || "",
         govtIdUrl: govtIdUrl || "",
         status: "pending",
@@ -211,10 +177,6 @@ if (form && formResult) {
         submitStatus.classList.remove("is-loading");
       }
       form.reset();
-      if (paymentInfo) {
-        paymentInfo.textContent = "Select gender to load payment link.";
-      }
-      sessionStorage.removeItem(`payment_done_${gender || "unknown"}`);
       if (eventNameInput) {
         eventNameInput.value = "";
       }
@@ -278,18 +240,6 @@ function setEventFromGender(gender) {
       const matches = choice.dataset.event === eventName;
       choice.classList.toggle("is-selected", matches);
     });
-  }
-
-  if (paymentInfo) {
-    const link = getPaymentLink(gender);
-    if (!gender) {
-      paymentInfo.textContent = "Select gender to load payment link.";
-    } else if (USE_TEST_PAYMENT) {
-      paymentInfo.textContent = "Testing payment link ready (₹2). Complete payment to enable submission.";
-    } else {
-      const amountText = gender === "Female" ? "₹250" : "₹350";
-      paymentInfo.textContent = `Payment link ready (${amountText}). Complete payment to enable submission.`;
-    }
   }
 
   if (successCard) {
