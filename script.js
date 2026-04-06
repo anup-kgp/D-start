@@ -1,15 +1,11 @@
-import { db, storage, serverTimestamp } from "./firebase.js";
+import { db, functions, serverTimestamp } from "./firebase.js";
 import {
   collection,
   runTransaction,
   doc,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 const form = document.getElementById("registrationForm");
 const formResult = document.getElementById("formResult");
@@ -31,14 +27,39 @@ if (window.emailjs) {
   window.emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
-async function uploadFile(file, folderPath) {
+const CLOUDINARY_FOLDER = "kdsac-registrations";
+const getCloudinarySignature = httpsCallable(functions, "getCloudinarySignature");
+
+async function uploadFile(file) {
   if (!file || !file.name) return null;
-  const extension = file.name.includes(".") ? file.name.split(".").pop() : "file";
-  const uniqueId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-  const safeName = `${uniqueId}.${extension}`;
-  const fileRef = ref(storage, `${folderPath}/${safeName}`);
-  await uploadBytes(fileRef, file);
-  return getDownloadURL(fileRef);
+  const signatureResult = await getCloudinarySignature({ folder: CLOUDINARY_FOLDER });
+  const { cloudName, apiKey, timestamp, signature, folder, type } = signatureResult.data;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("api_key", apiKey);
+  formData.append("timestamp", timestamp);
+  formData.append("signature", signature);
+  formData.append("folder", folder);
+  formData.append("type", type);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Cloudinary upload failed");
+  }
+
+  const result = await response.json();
+  return {
+    publicId: result.public_id,
+    resourceType: result.resource_type,
+  };
 }
 
 async function getNextRegistrationNumber() {
@@ -90,10 +111,9 @@ if (form && formResult) {
     try {
       const regNumber = await getNextRegistrationNumber();
       const registrationRef = doc(collection(db, "registrations"));
-      const folderPath = `registrations/${registrationRef.id}`;
-      const [photoUrl, govtIdUrl] = await Promise.all([
-        uploadFile(photoFile, folderPath),
-        uploadFile(govtIdFile, folderPath),
+      const [photoResult, govtIdResult] = await Promise.all([
+        uploadFile(photoFile),
+        uploadFile(govtIdFile),
       ]);
 
       const fee = gender === "Female" ? 250 : 350;
@@ -110,8 +130,10 @@ if (form && formResult) {
         tshirtSize: String(formData.get("tshirtSize") || "").trim(),
         fee,
         regNumber,
-        photoUrl: photoUrl || "",
-        govtIdUrl: govtIdUrl || "",
+        photoPublicId: photoResult ? photoResult.publicId : "",
+        photoResourceType: photoResult ? photoResult.resourceType : "",
+        govtIdPublicId: govtIdResult ? govtIdResult.publicId : "",
+        govtIdResourceType: govtIdResult ? govtIdResult.resourceType : "",
         status: "pending",
         certificateStatus: "pending",
         rank: "",

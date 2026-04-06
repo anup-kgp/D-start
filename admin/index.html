@@ -17,7 +17,7 @@
     />
     <link rel="stylesheet" href="../styles.css" />
   </head>
-  <body>
+  <body class="admin-page">
     <header class="site-header admin-header">
       <div class="container nav">
         <div class="brand">
@@ -47,82 +47,123 @@
           </div>
 
           <div class="admin-content" id="adminContent" hidden>
-            <div class="admin-userbar">
-              <div>
-                <strong id="adminEmail">Signed in</strong>
-                <p class="form-note">Only authorized admins can view registration data.</p>
+            <div class="admin-topbar">
+              <div class="admin-brand">
+                <p class="eyebrow">Admin Console</p>
+                <h2>KDSAC Registration Management</h2>
+                <p class="muted">Secure access for authorized event managers only.</p>
               </div>
-              <button class="button button-secondary button-small" id="logoutButton" type="button">Sign out</button>
+              <div class="admin-topbar-actions">
+                <div class="admin-user">
+                  <span id="adminEmail">Signed in</span>
+                </div>
+                <button class="button button-secondary button-small" id="logoutButton" type="button">Sign out</button>
+              </div>
             </div>
 
-          <div class="section-heading">
-            <p class="eyebrow">Admin Panel</p>
-            <h2>Manage participant entries & certificates.</h2>
-            <p>
-              Update certificate status only after checking participation or rank results.
-              Changes are saved directly to the database.
-            </p>
-          </div>
+            <div class="admin-stats">
+              <div class="stat-card">
+                <span>Total Registrations</span>
+                <strong id="statTotal">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Pending Certificates</span>
+                <strong id="statPending">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Participants</span>
+                <strong id="statParticipant">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Ranked</span>
+                <strong id="statRanked">--</strong>
+              </div>
+            </div>
 
-          <div class="admin-controls">
-            <input class="input-field" type="search" id="adminSearch" placeholder="Search by name, phone, or email" />
-            <select class="input-field" id="statusFilter">
-              <option value="all">All certificates</option>
-              <option value="pending">Pending</option>
-              <option value="participant">Participant</option>
-              <option value="ranked">Ranked</option>
-            </select>
-            <button class="button button-secondary" id="refreshButton" type="button">Refresh</button>
-          </div>
+            <div class="admin-panel">
+              <div class="panel-header">
+                <div>
+                  <h3>Participant Records</h3>
+                  <p class="muted">Review entries, update certificate status, and manage ranks.</p>
+                </div>
+                <div class="panel-links">
+                  <a href="../register.html">Registration</a>
+                  <a href="../certificate.html">Certificates</a>
+                  <a href="../verify.html">Verify</a>
+                </div>
+              </div>
 
-          <div class="bulk-actions">
-            <label class="bulk-select">
-              <input type="checkbox" id="selectAllRows" />
-              Select all
-            </label>
-            <select class="input-field" id="bulkStatus">
-              <option value="">Set status</option>
-              <option value="pending">Pending</option>
-              <option value="participant">Participant</option>
-              <option value="ranked">Ranked</option>
-            </select>
-            <button class="button button-primary button-small" id="applyBulk" type="button">Apply</button>
-          </div>
+              <div class="admin-controls">
+                <input class="input-field" type="search" id="adminSearch" placeholder="Search by name, phone, or email" />
+                <select class="input-field" id="statusFilter">
+                  <option value="all">All certificates</option>
+                  <option value="pending">Pending</option>
+                  <option value="participant">Participant</option>
+                  <option value="ranked">Ranked</option>
+                </select>
+                <button class="button button-secondary" id="refreshButton" type="button">Refresh</button>
+              </div>
 
-          <div class="table-wrap">
-            <table class="admin-table" id="adminTable">
-              <thead>
-                <tr>
-                  <th>Select</th>
-                  <th>Reg No</th>
-                  <th>Name</th>
-                  <th>DOB</th>
-                  <th>Gender</th>
-                  <th>Event</th>
-                  <th>Phone</th>
-                  <th>Email</th>
-                  <th>Fee</th>
-                  <th>Files</th>
-                  <th>Certificate</th>
-                  <th>Rank</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colspan="13">Loading registrations...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="fine-print">
-            Tip: Set certificate status to "Participant" or "Ranked" after results are final. Only then can athletes download certificates.
-          </p>
+              <div class="bulk-actions">
+                <label class="bulk-select">
+                  <input type="checkbox" id="selectAllRows" />
+                  Select all
+                </label>
+                <select class="input-field" id="bulkStatus">
+                  <option value="">Set status</option>
+                  <option value="pending">Pending</option>
+                  <option value="participant">Participant</option>
+                  <option value="ranked">Ranked</option>
+                </select>
+                <button class="button button-primary button-small" id="applyBulk" type="button">Apply</button>
+              </div>
+
+              <div class="table-wrap">
+                <table class="admin-table" id="adminTable">
+                  <thead>
+                    <tr>
+                      <th>Select</th>
+                      <th>Reg No</th>
+                      <th>Name</th>
+                      <th>DOB</th>
+                      <th>Gender</th>
+                      <th>Event</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                      <th>Fee</th>
+                      <th>Files</th>
+                      <th>Certificate</th>
+                      <th>Rank</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="13">Loading registrations...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p class="fine-print">
+                Tip: Set certificate status to "Participant" or "Ranked" after results are final. Only then can athletes download certificates.
+              </p>
+            </div>
           </div>
         </div>
       </section>
     </main>
 
+    <div class="image-modal" id="imageModal" hidden>
+      <div class="image-modal-backdrop" id="imageModalBackdrop"></div>
+      <div class="image-modal-card">
+        <button class="button button-secondary button-small image-modal-close" id="imageModalClose" type="button">Close</button>
+        <img id="imageModalImg" alt="Preview" />
+        <a class="button button-primary button-small" id="imageModalDownload" href="#" download>Download</a>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="module" src="./admin.js"></script>
   </body>
 </html>

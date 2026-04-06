@@ -1,4 +1,4 @@
-import { db, auth, serverTimestamp } from "../firebase.js";
+import { db, auth, functions, serverTimestamp } from "../firebase.js";
 import {
   collection,
   getDocs,
@@ -15,6 +15,7 @@ import {
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 const menuToggle = document.getElementById("menuToggle");
 const siteNav = document.getElementById("siteNav");
@@ -32,11 +33,41 @@ const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
 const loginMessage = document.getElementById("loginMessage");
 const adminEmail = document.getElementById("adminEmail");
+const statTotal = document.getElementById("statTotal");
+const statPending = document.getElementById("statPending");
+const statParticipant = document.getElementById("statParticipant");
+const statRanked = document.getElementById("statRanked");
+const imageModal = document.getElementById("imageModal");
+const imageModalImg = document.getElementById("imageModalImg");
+const imageModalClose = document.getElementById("imageModalClose");
+const imageModalBackdrop = document.getElementById("imageModalBackdrop");
+const imageModalDownload = document.getElementById("imageModalDownload");
+const getCloudinarySignedUrl = httpsCallable(functions, "getCloudinarySignedUrl");
 
 let registrations = [];
 let selectedIds = new Set();
 let currentUser = null;
 let isAdminUser = false;
+
+const EMAILJS_SERVICE_ID = "service_oelo1t3";
+const EMAILJS_RANKED_TEMPLATE_ID = "template_hkgh7an";
+const EMAILJS_PUBLIC_KEY = "VsrnVcsptNZyqUHKP";
+
+if (window.emailjs) {
+  window.emailjs.init(EMAILJS_PUBLIC_KEY);
+}
+
+function getPrizeAmount(eventName, rankValue) {
+  const rank = Number(rankValue);
+  if (!rank || rank < 1 || rank > 5) return "";
+  if (eventName === "Men 10 KM") {
+    return ["10000", "7000", "5000", "2000", "1000"][rank - 1];
+  }
+  if (eventName === "Women 5 KM") {
+    return ["5000", "4000", "3000", "2000", "1000"][rank - 1];
+  }
+  return "";
+}
 
 if (menuToggle && siteNav) {
   menuToggle.addEventListener("click", () => {
@@ -136,28 +167,54 @@ function renderTable(list) {
     const fileCell = document.createElement("td");
     const fileList = document.createElement("div");
     fileList.className = "file-links";
-    if (reg.photoUrl) {
-      const photoLink = document.createElement("a");
-      photoLink.href = reg.photoUrl;
-      photoLink.target = "_blank";
-      photoLink.rel = "noreferrer";
-      photoLink.textContent = "Photo";
-      fileList.appendChild(photoLink);
+
+    if (reg.photoPublicId || reg.photoUrl) {
+      const photoWrap = document.createElement("div");
+      photoWrap.className = "file-item";
+      const photoButton = document.createElement("button");
+      photoButton.type = "button";
+      photoButton.className = "thumb-button";
+      photoButton.textContent = "View Photo";
+      photoButton.addEventListener("click", () => openImageModal(reg.photoPublicId, reg.photoResourceType, reg.photoUrl));
+      const photoLink = document.createElement("button");
+      photoLink.type = "button";
+      photoLink.className = "link-button";
+      photoLink.textContent = "Download";
+      photoLink.addEventListener("click", () => openSignedUrl(reg.photoPublicId, reg.photoResourceType, reg.photoUrl));
+      photoWrap.appendChild(photoButton);
+      photoWrap.appendChild(photoLink);
+      fileList.appendChild(photoWrap);
     }
-    if (reg.govtIdUrl) {
-      const idLink = document.createElement("a");
-      idLink.href = reg.govtIdUrl;
-      idLink.target = "_blank";
-      idLink.rel = "noreferrer";
-      idLink.textContent = "Govt ID";
-      fileList.appendChild(idLink);
+
+    if (reg.govtIdPublicId || reg.govtIdUrl) {
+      const idWrap = document.createElement("div");
+      idWrap.className = "file-item";
+      const isPdf = (reg.govtIdUrl || "").toLowerCase().includes(".pdf");
+      if (!isPdf) {
+        const idButton = document.createElement("button");
+        idButton.type = "button";
+        idButton.className = "thumb-button";
+        idButton.textContent = "View ID";
+        idButton.addEventListener("click", () => openImageModal(reg.govtIdPublicId, reg.govtIdResourceType, reg.govtIdUrl));
+        idWrap.appendChild(idButton);
+      }
+      const idLink = document.createElement("button");
+      idLink.type = "button";
+      idLink.className = "link-button";
+      idLink.textContent = isPdf ? "Govt ID (PDF)" : "Govt ID";
+      idLink.addEventListener("click", () => openSignedUrl(reg.govtIdPublicId, reg.govtIdResourceType, reg.govtIdUrl));
+      idWrap.appendChild(idLink);
+      fileList.appendChild(idWrap);
     }
+
     if (!reg.photoUrl && !reg.govtIdUrl) {
       fileList.textContent = "-";
     }
+
     fileCell.appendChild(fileList);
 
     const statusCell = document.createElement("td");
+    statusCell.classList.add("status-cell");
     const statusSelect = document.createElement("select");
     statusSelect.className = "input-field";
     ["pending", "participant", "ranked"].forEach((status) => {
@@ -172,6 +229,7 @@ function renderTable(list) {
     statusCell.appendChild(statusSelect);
 
     const rankCell = document.createElement("td");
+    rankCell.classList.add("rank-cell");
     const rankInput = document.createElement("input");
     rankInput.type = "number";
     rankInput.min = "1";
@@ -182,6 +240,7 @@ function renderTable(list) {
     rankCell.appendChild(rankInput);
 
     const actionCell = document.createElement("td");
+    actionCell.classList.add("action-cell");
     const saveButton = document.createElement("button");
     saveButton.className = "button button-primary button-small";
     saveButton.type = "button";
@@ -210,6 +269,25 @@ function renderTable(list) {
           updatedAt: serverTimestamp(),
         }, { merge: true });
 
+        if (newStatus === "ranked" && reg.email && rankValue && reg.certificateStatus !== "ranked") {
+          const certificateLink = `${window.location.origin}/certificate.html`;
+          const prizeValue = getPrizeAmount(reg.eventName, rankValue);
+          try {
+            if (window.emailjs) {
+              await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_RANKED_TEMPLATE_ID, {
+                name: reg.name || "",
+                rank: rankValue || "Ranked",
+                category: reg.eventName || "",
+                prize: prizeValue,
+                certificate_link: certificateLink,
+                email: reg.email,
+              });
+            }
+          } catch (mailError) {
+            console.error("Ranked email failed", mailError);
+          }
+        }
+
         reg.certificateStatus = newStatus;
         reg.rank = rankValue;
         saveButton.textContent = "Saved";
@@ -225,6 +303,20 @@ function renderTable(list) {
     });
 
     actionCell.appendChild(saveButton);
+
+    selectCell.dataset.label = "Select";
+    regCell.dataset.label = "Reg No";
+    nameCell.dataset.label = "Name";
+    dobCell.dataset.label = "DOB";
+    genderCell.dataset.label = "Gender";
+    eventCell.dataset.label = "Event";
+    phoneCell.dataset.label = "Phone";
+    emailCell.dataset.label = "Email";
+    feeCell.dataset.label = "Fee";
+    fileCell.dataset.label = "Files";
+    statusCell.dataset.label = "Certificate";
+    rankCell.dataset.label = "Rank";
+    actionCell.dataset.label = "Action";
 
     row.appendChild(selectCell);
     row.appendChild(regCell);
@@ -244,6 +336,52 @@ function renderTable(list) {
   });
 }
 
+async function openImageModal(publicId, resourceType, fallbackUrl) {
+  if (!imageModal || !imageModalImg || !imageModalDownload) return;
+  try {
+    let finalUrl = fallbackUrl;
+    if (publicId) {
+      const result = await getCloudinarySignedUrl({ publicId, resourceType });
+      finalUrl = result.data.url;
+    }
+    if (!finalUrl) return;
+    imageModalImg.src = finalUrl;
+    imageModalDownload.href = finalUrl;
+  } catch (error) {
+    console.error(error);
+  }
+  imageModal.hidden = false;
+}
+
+async function openSignedUrl(publicId, resourceType, fallbackUrl) {
+  try {
+    let finalUrl = fallbackUrl;
+    if (publicId) {
+      const result = await getCloudinarySignedUrl({ publicId, resourceType });
+      finalUrl = result.data.url;
+    }
+    if (finalUrl) {
+      window.open(finalUrl, "_blank", "noopener");
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function closeImageModal() {
+  if (!imageModal || !imageModalImg) return;
+  imageModal.hidden = true;
+  imageModalImg.removeAttribute("src");
+}
+
+if (imageModalClose) {
+  imageModalClose.addEventListener("click", closeImageModal);
+}
+
+if (imageModalBackdrop) {
+  imageModalBackdrop.addEventListener("click", closeImageModal);
+}
+
 function applyFilters() {
   const searchValue = normalizeValue(adminSearch ? adminSearch.value : "");
   const statusValue = statusFilter ? statusFilter.value : "all";
@@ -261,6 +399,18 @@ function applyFilters() {
   renderTable(filtered);
 }
 
+function updateStats() {
+  if (!statTotal) return;
+  const total = registrations.length;
+  const pending = registrations.filter((reg) => (reg.certificateStatus || "pending") === "pending").length;
+  const participant = registrations.filter((reg) => reg.certificateStatus === "participant").length;
+  const ranked = registrations.filter((reg) => reg.certificateStatus === "ranked").length;
+  statTotal.textContent = total;
+  if (statPending) statPending.textContent = pending;
+  if (statParticipant) statParticipant.textContent = participant;
+  if (statRanked) statRanked.textContent = ranked;
+}
+
 async function loadRegistrations() {
   if (!tableBody) return;
   tableBody.innerHTML = "<tr><td colspan=\"13\">Loading registrations...</td></tr>";
@@ -271,6 +421,7 @@ async function loadRegistrations() {
     registrations = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
     selectedIds = new Set();
     if (selectAllRows) selectAllRows.checked = false;
+    updateStats();
     applyFilters();
   } catch (error) {
     console.error(error);
@@ -330,6 +481,24 @@ if (applyBulk) {
           rank: rankValue,
           updatedAt: serverTimestamp(),
         }, { merge: true });
+        if (newStatus === "ranked" && reg.email && rankValue) {
+          const certificateLink = `${window.location.origin}/certificate.html`;
+          try {
+            const prizeValue = getPrizeAmount(reg.eventName, rankValue);
+            if (window.emailjs) {
+              await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_RANKED_TEMPLATE_ID, {
+                name: reg.name || "",
+                rank: rankValue || "Ranked",
+                category: reg.eventName || "",
+                prize: prizeValue,
+                certificate_link: certificateLink,
+                email: reg.email,
+              });
+            }
+          } catch (mailError) {
+            console.error("Ranked email failed", mailError);
+          }
+        }
       });
       await Promise.all(updates);
       await loadRegistrations();
