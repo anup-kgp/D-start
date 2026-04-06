@@ -17,6 +17,7 @@ const selectedEventLabel = document.getElementById("selectedEventLabel");
 const successCard = document.getElementById("successCard");
 const genderSelect = document.getElementById("genderSelect");
 const submitButton = form ? form.querySelector("button[type=\"submit\"]") : null;
+const submitStatus = document.getElementById("submitStatus");
 
 const EMAILJS_SERVICE_ID = "service_oelo1t3";
 const EMAILJS_TEMPLATE_ID = "template_t3lut81";
@@ -94,12 +95,19 @@ if (form && formResult) {
       eventName = gender === "Female" ? "Women 5 KM" : "Men 10 KM";
     }
 
+    if (submitStatus) {
+      submitStatus.textContent = "Preparing your registration...";
+      submitStatus.classList.add("is-loading");
+    }
     if (submitButton) {
       submitButton.disabled = true;
       submitButton.textContent = "Submitting...";
     }
 
     try {
+      if (submitStatus) {
+        submitStatus.textContent = "Uploading documents...";
+      }
       const regNumber = await getNextRegistrationNumber();
       const registrationRef = doc(collection(db, "registrations"));
       const [photoUrl, govtIdUrl] = await Promise.all([
@@ -107,6 +115,9 @@ if (form && formResult) {
         uploadFile(govtIdFile),
       ]);
 
+      if (submitStatus) {
+        submitStatus.textContent = "Saving your registration...";
+      }
       const fee = gender === "Female" ? 250 : 350;
       const payload = {
         name: String(name || "").trim(),
@@ -131,6 +142,9 @@ if (form && formResult) {
 
       await setDoc(registrationRef, payload);
 
+      if (submitStatus) {
+        submitStatus.textContent = "Sending confirmation email...";
+      }
       const websiteLink = `${window.location.origin}/index.html`;
       const emailParams = {
         name: payload.name,
@@ -153,9 +167,13 @@ if (form && formResult) {
         console.error("Email send failed", mailError);
       }
 
-      formResult.textContent = `${name}, your registration for ${eventName} has been received successfully. Your registration number is ${regNumber}.`;
+      formResult.textContent = `${name}, your registration for ${eventName} has been received successfully. Your registration number is ${regNumber}. You will receive a confirmation email shortly.`;
       if (successCard) {
         successCard.hidden = false;
+      }
+      if (submitStatus) {
+        submitStatus.textContent = "";
+        submitStatus.classList.remove("is-loading");
       }
       form.reset();
       if (eventNameInput) {
@@ -180,11 +198,18 @@ if (form && formResult) {
       if (successCard) {
         successCard.hidden = false;
       }
+      if (submitStatus) {
+        submitStatus.textContent = "";
+        submitStatus.classList.remove("is-loading");
+      }
       console.error(error);
     } finally {
       if (submitButton) {
         submitButton.disabled = false;
         submitButton.textContent = "Submit Registration";
+      }
+      if (submitStatus) {
+        submitStatus.classList.remove("is-loading");
       }
     }
   });
