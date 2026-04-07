@@ -190,7 +190,7 @@ if (form && formResult) {
       if (submitStatus) {
         submitStatus.textContent = "Opening payment window...";
       }
-      const fee = gender === "Female" ? 250 : 2;
+      const fee = gender === "Female" ? 250 : 350;
       const order = await createRazorpayOrder(fee, name, eventName);
       const payment = await openRazorpayCheckout(order, {
         name: String(name || "").trim(),
