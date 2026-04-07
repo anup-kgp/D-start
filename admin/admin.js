@@ -22,6 +22,8 @@ const adminTable = document.getElementById("adminTable");
 const tableBody = adminTable ? adminTable.querySelector("tbody") : null;
 const adminSearch = document.getElementById("adminSearch");
 const statusFilter = document.getElementById("statusFilter");
+const genderFilter = document.getElementById("genderFilter");
+const eventFilter = document.getElementById("eventFilter");
 const refreshButton = document.getElementById("refreshButton");
 const selectAllRows = document.getElementById("selectAllRows");
 const bulkStatus = document.getElementById("bulkStatus");
@@ -36,6 +38,9 @@ const statTotal = document.getElementById("statTotal");
 const statPending = document.getElementById("statPending");
 const statParticipant = document.getElementById("statParticipant");
 const statRanked = document.getElementById("statRanked");
+const statRevenue = document.getElementById("statRevenue");
+const statMenRevenue = document.getElementById("statMenRevenue");
+const statWomenRevenue = document.getElementById("statWomenRevenue");
 const imageModal = document.getElementById("imageModal");
 const imageModalImg = document.getElementById("imageModalImg");
 const imageModalClose = document.getElementById("imageModalClose");
@@ -365,6 +370,8 @@ if (imageModalBackdrop) {
 function applyFilters() {
   const searchValue = normalizeValue(adminSearch ? adminSearch.value : "");
   const statusValue = statusFilter ? statusFilter.value : "all";
+  const genderValue = genderFilter ? genderFilter.value : "all";
+  const eventValue = eventFilter ? eventFilter.value : "all";
 
   const filtered = registrations.filter((reg) => {
     const matchesSearch = !searchValue
@@ -373,7 +380,9 @@ function applyFilters() {
       || normalizeValue(reg.email).includes(searchValue);
     const currentStatus = reg.certificateStatus || "pending";
     const matchesStatus = statusValue === "all" || currentStatus === statusValue;
-    return matchesSearch && matchesStatus;
+    const matchesGender = genderValue === "all" || reg.gender === genderValue;
+    const matchesEvent = eventValue === "all" || reg.eventName === eventValue;
+    return matchesSearch && matchesStatus && matchesGender && matchesEvent;
   });
 
   renderTable(filtered);
@@ -385,10 +394,20 @@ function updateStats() {
   const pending = registrations.filter((reg) => (reg.certificateStatus || "pending") === "pending").length;
   const participant = registrations.filter((reg) => reg.certificateStatus === "participant").length;
   const ranked = registrations.filter((reg) => reg.certificateStatus === "ranked").length;
+  const totalRevenue = registrations.reduce((sum, reg) => sum + (Number(reg.fee) || 0), 0);
+  const menRevenue = registrations
+    .filter((reg) => reg.gender === "Male")
+    .reduce((sum, reg) => sum + (Number(reg.fee) || 0), 0);
+  const womenRevenue = registrations
+    .filter((reg) => reg.gender === "Female")
+    .reduce((sum, reg) => sum + (Number(reg.fee) || 0), 0);
   statTotal.textContent = total;
   if (statPending) statPending.textContent = pending;
   if (statParticipant) statParticipant.textContent = participant;
   if (statRanked) statRanked.textContent = ranked;
+  if (statRevenue) statRevenue.textContent = `₹${totalRevenue}`;
+  if (statMenRevenue) statMenRevenue.textContent = `₹${menRevenue}`;
+  if (statWomenRevenue) statWomenRevenue.textContent = `₹${womenRevenue}`;
 }
 
 async function loadRegistrations() {
@@ -415,6 +434,14 @@ if (adminSearch) {
 
 if (statusFilter) {
   statusFilter.addEventListener("change", applyFilters);
+}
+
+if (genderFilter) {
+  genderFilter.addEventListener("change", applyFilters);
+}
+
+if (eventFilter) {
+  eventFilter.addEventListener("change", applyFilters);
 }
 
 if (refreshButton) {

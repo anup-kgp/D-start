@@ -78,6 +78,18 @@
                 <span>Ranked</span>
                 <strong id="statRanked">--</strong>
               </div>
+              <div class="stat-card">
+                <span>Total Collection</span>
+                <strong id="statRevenue">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Men Collection</span>
+                <strong id="statMenRevenue">--</strong>
+              </div>
+              <div class="stat-card">
+                <span>Women Collection</span>
+                <strong id="statWomenRevenue">--</strong>
+              </div>
             </div>
 
             <div class="admin-panel">
@@ -100,6 +112,16 @@
                   <option value="pending">Pending</option>
                   <option value="participant">Participant</option>
                   <option value="ranked">Ranked</option>
+                </select>
+                <select class="input-field" id="genderFilter">
+                  <option value="all">All genders</option>
+                  <option value="Male">Men (10 KM)</option>
+                  <option value="Female">Women (5 KM)</option>
+                </select>
+                <select class="input-field" id="eventFilter">
+                  <option value="all">All events</option>
+                  <option value="Men 10 KM">Men 10 KM</option>
+                  <option value="Women 5 KM">Women 5 KM</option>
                 </select>
                 <button class="button button-secondary" id="refreshButton" type="button">Refresh</button>
               </div>
