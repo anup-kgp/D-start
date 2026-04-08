@@ -46,6 +46,7 @@ const imageModalImg = document.getElementById("imageModalImg");
 const imageModalClose = document.getElementById("imageModalClose");
 const imageModalBackdrop = document.getElementById("imageModalBackdrop");
 const imageModalDownload = document.getElementById("imageModalDownload");
+const directRegistrationLink = document.getElementById("directRegistrationLink");
 
 let registrations = [];
 let selectedIds = new Set();
@@ -581,6 +582,9 @@ onAuthStateChanged(auth, async (user) => {
   isAdminUser = await checkAdmin(user);
 
   if (isAdminUser) {
+    if (directRegistrationLink) {
+      directRegistrationLink.href = `${window.location.origin}/register.html?direct=1`;
+    }
     if (adminLogin) {
       adminLogin.hidden = true;
       adminLogin.style.display = "none";

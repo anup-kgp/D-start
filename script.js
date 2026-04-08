@@ -200,7 +200,12 @@ if (form && formResult) {
     }
 
     try {
-      const fee = 1;
+      let fee = 1;
+      if (gender === "Female") {
+        fee = 250;
+      } else if (gender === "Male") {
+        fee = 350;
+      }
       let payment = {
         paymentId: "",
         orderId: "",
