@@ -228,6 +228,9 @@ if (form && formResult) {
     }
 
     try {
+      if (!photoFile || !photoFile.name) {
+        throw new Error("Photo is required.");
+      }
       const fee = gender === "Female" ? 250 : 350;
       let payment = {
         paymentId: "",
