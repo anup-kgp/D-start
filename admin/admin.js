@@ -135,7 +135,11 @@ async function saveDirectAccessConfig({ enabled, key }) {
 
 function buildDirectLink() {
   if (!directAccessKey) return "";
-  return `${window.location.origin}/register.html?direct=1&key=${encodeURIComponent(directAccessKey)}`;
+  const host = window.location.hostname;
+  const base = host && host !== "localhost" && host !== "127.0.0.1"
+    ? window.location.origin
+    : "https://kdsac.in";
+  return `${base}/register.html?direct=1&key=${encodeURIComponent(directAccessKey)}`;
 }
 
 if (directAccessToggle) {
@@ -171,11 +175,23 @@ if (copyDirectLink) {
       return;
     }
     try {
-      await navigator.clipboard.writeText(link);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const temp = document.createElement("textarea");
+        temp.value = link;
+        temp.style.position = "fixed";
+        temp.style.left = "-9999px";
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+      }
       setDirectMessage("Direct link copied.");
     } catch (error) {
       console.error(error);
-      setDirectMessage("Unable to copy link.");
+      setDirectMessage(link);
     }
   });
 }
