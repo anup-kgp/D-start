@@ -5,7 +5,6 @@ import {
   doc,
   setDoc,
   updateDoc,
-  getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const form = document.getElementById("registrationForm");
@@ -33,7 +32,6 @@ if (window.emailjs) {
 const CLOUDINARY_CLOUD_NAME = "dpyslavgz";
 const CLOUDINARY_UPLOAD_PRESET = "x2uxplk3";
 const CLOUDINARY_FOLDER = "kdsac-registrations";
-let feeConfig = { men: 350, women: 250 };
 
 async function createRazorpayOrder(amount, name, category) {
   const response = await fetch("/api/create-order", {
@@ -139,21 +137,6 @@ async function uploadFile(file) {
   return result.secure_url || result.url || null;
 }
 
-async function loadFeeConfig() {
-  try {
-    const snap = await getDoc(doc(db, "settings", "fees"));
-    if (snap.exists()) {
-      const data = snap.data();
-      const menFee = Number(data.men);
-      const womenFee = Number(data.women);
-      if (Number.isFinite(menFee) && menFee >= 0) feeConfig.men = menFee;
-      if (Number.isFinite(womenFee) && womenFee >= 0) feeConfig.women = womenFee;
-    }
-  } catch (error) {
-    console.error("Fee config load failed", error);
-  }
-}
-
 async function getNextRegistrationNumber() {
   const counterRef = doc(db, "counters", "registration");
   const nextNumber = await runTransaction(db, async (transaction) => {
@@ -181,7 +164,6 @@ if (menuToggle && siteNav) {
 }
 
 if (form && formResult) {
-  loadFeeConfig();
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -193,7 +175,13 @@ if (form && formResult) {
     const govtIdFile = formData.get("govtId");
 
     if (!eventName) {
-      eventName = gender === "Female" ? "Women 5 KM" : "Men 10 KM";
+      if (gender === "Female") {
+        eventName = "Women 5 KM";
+      } else if (gender === "Male") {
+        eventName = "Men 10 KM";
+      } else {
+        eventName = "Other";
+      }
     }
 
     if (submitStatus) {
@@ -209,7 +197,7 @@ if (form && formResult) {
       if (submitStatus) {
         submitStatus.textContent = "Opening payment window...";
       }
-      const fee = gender === "Female" ? feeConfig.women : feeConfig.men;
+      const fee = 1;
       const order = await createRazorpayOrder(fee, name, eventName);
       const payment = await openRazorpayCheckout(order, {
         name: String(name || "").trim(),
@@ -363,6 +351,8 @@ function setEventFromGender(gender) {
     eventName = "Women 5 KM";
   } else if (gender === "Male") {
     eventName = "Men 10 KM";
+  } else if (gender === "Other") {
+    eventName = "Other";
   }
 
   if (eventNameInput) {

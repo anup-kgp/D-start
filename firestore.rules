@@ -36,14 +36,5 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /settings/fees {
-      allow get: if true;
-      allow list: if false;
-      allow write: if isAdmin();
-    }
-
-    match /settings/prizes {
-      allow read, write: if isAdmin();
-    }
   }
 }
