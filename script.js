@@ -19,6 +19,7 @@ const successCard = document.getElementById("successCard");
 const genderSelect = document.getElementById("genderSelect");
 const submitButton = form ? form.querySelector("button[type=\"submit\"]") : null;
 const submitStatus = document.getElementById("submitStatus");
+const directPaymentNote = document.getElementById("directPaymentNote");
 
 
 const EMAILJS_SERVICE_ID = "service_oelo1t3";
@@ -32,6 +33,11 @@ if (window.emailjs) {
 const CLOUDINARY_CLOUD_NAME = "dpyslavgz";
 const CLOUDINARY_UPLOAD_PRESET = "x2uxplk3";
 const CLOUDINARY_FOLDER = "kdsac-registrations";
+const directPayment = new URLSearchParams(window.location.search).get("direct") === "1";
+
+if (directPaymentNote && directPayment) {
+  directPaymentNote.hidden = false;
+}
 
 async function createRazorpayOrder(amount, name, category) {
   const response = await fetch("/api/create-order", {
@@ -194,20 +200,35 @@ if (form && formResult) {
     }
 
     try {
-      if (submitStatus) {
-        submitStatus.textContent = "Opening payment window...";
-      }
       const fee = 1;
-      const order = await createRazorpayOrder(fee, name, eventName);
-      const payment = await openRazorpayCheckout(order, {
-        name: String(name || "").trim(),
-        email: String(formData.get("email") || "").trim(),
-        contact: String(formData.get("phone") || "").trim(),
-      });
-      if (submitStatus) {
-        submitStatus.textContent = "Verifying payment...";
+      let payment = {
+        paymentId: "",
+        orderId: "",
+        signature: "",
+        status: "manual",
+        method: "cash",
+      };
+
+      if (!directPayment) {
+        if (submitStatus) {
+          submitStatus.textContent = "Opening payment window...";
+        }
+        const order = await createRazorpayOrder(fee, name, eventName);
+        const paymentResult = await openRazorpayCheckout(order, {
+          name: String(name || "").trim(),
+          email: String(formData.get("email") || "").trim(),
+          contact: String(formData.get("phone") || "").trim(),
+        });
+        if (submitStatus) {
+          submitStatus.textContent = "Verifying payment...";
+        }
+        await verifyRazorpayPayment(paymentResult);
+        payment = {
+          ...paymentResult,
+          status: "paid",
+          method: "razorpay",
+        };
       }
-      await verifyRazorpayPayment(payment);
 
       const regNumber = await getNextRegistrationNumber();
       const registrationRef = doc(collection(db, "registrations"));
@@ -228,7 +249,8 @@ if (form && formResult) {
         paymentSignature: payment.signature,
         paymentAmount: fee,
         paymentCurrency: "INR",
-        paymentStatus: "paid",
+        paymentStatus: payment.status,
+        paymentMethod: payment.method,
         regNumber,
         photoUrl: "",
         govtIdUrl: "",
