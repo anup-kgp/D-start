@@ -171,6 +171,42 @@
                 Tip: Set certificate status to "Participant" or "Ranked" after results are final. Only then can athletes download certificates.
               </p>
             </div>
+
+            <div class="admin-panel">
+              <div class="panel-header">
+                <div>
+                  <h3>Prize Settings (Testing)</h3>
+                  <p class="muted">Update prize amounts for testing. Leave blank to use default prizes.</p>
+                </div>
+              </div>
+
+              <div class="prize-settings">
+                <div class="prize-group">
+                  <h4>Men 10 KM</h4>
+                  <div class="prize-grid">
+                    <label>Rank 1 <input class="input-field" id="menPrize1" type="number" min="0" placeholder="10000" /></label>
+                    <label>Rank 2 <input class="input-field" id="menPrize2" type="number" min="0" placeholder="7000" /></label>
+                    <label>Rank 3 <input class="input-field" id="menPrize3" type="number" min="0" placeholder="5000" /></label>
+                    <label>Rank 4 <input class="input-field" id="menPrize4" type="number" min="0" placeholder="2000" /></label>
+                    <label>Rank 5 <input class="input-field" id="menPrize5" type="number" min="0" placeholder="1000" /></label>
+                  </div>
+                </div>
+                <div class="prize-group">
+                  <h4>Women 5 KM</h4>
+                  <div class="prize-grid">
+                    <label>Rank 1 <input class="input-field" id="womenPrize1" type="number" min="0" placeholder="5000" /></label>
+                    <label>Rank 2 <input class="input-field" id="womenPrize2" type="number" min="0" placeholder="4000" /></label>
+                    <label>Rank 3 <input class="input-field" id="womenPrize3" type="number" min="0" placeholder="3000" /></label>
+                    <label>Rank 4 <input class="input-field" id="womenPrize4" type="number" min="0" placeholder="2000" /></label>
+                    <label>Rank 5 <input class="input-field" id="womenPrize5" type="number" min="0" placeholder="1000" /></label>
+                  </div>
+                </div>
+              </div>
+              <div class="bulk-actions">
+                <button class="button button-primary button-small" id="savePrizeConfig" type="button">Save Prize Settings</button>
+                <p class="form-note" id="prizeSaveMessage"></p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -46,11 +46,28 @@ const imageModalImg = document.getElementById("imageModalImg");
 const imageModalClose = document.getElementById("imageModalClose");
 const imageModalBackdrop = document.getElementById("imageModalBackdrop");
 const imageModalDownload = document.getElementById("imageModalDownload");
+const menPrizeInputs = [
+  document.getElementById("menPrize1"),
+  document.getElementById("menPrize2"),
+  document.getElementById("menPrize3"),
+  document.getElementById("menPrize4"),
+  document.getElementById("menPrize5"),
+];
+const womenPrizeInputs = [
+  document.getElementById("womenPrize1"),
+  document.getElementById("womenPrize2"),
+  document.getElementById("womenPrize3"),
+  document.getElementById("womenPrize4"),
+  document.getElementById("womenPrize5"),
+];
+const savePrizeConfigButton = document.getElementById("savePrizeConfig");
+const prizeSaveMessage = document.getElementById("prizeSaveMessage");
 
 let registrations = [];
 let selectedIds = new Set();
 let currentUser = null;
 let isAdminUser = false;
+let prizeConfig = null;
 
 const EMAILJS_SERVICE_ID = "service_oelo1t3";
 const EMAILJS_RANKED_TEMPLATE_ID = "template_hkgh7an";
@@ -63,11 +80,13 @@ if (window.emailjs) {
 function getPrizeAmount(eventName, rankValue) {
   const rank = Number(rankValue);
   if (!rank || rank < 1 || rank > 5) return "";
+  const defaultMen = ["10000", "7000", "5000", "2000", "1000"];
+  const defaultWomen = ["5000", "4000", "3000", "2000", "1000"];
   if (eventName === "Men 10 KM") {
-    return ["10000", "7000", "5000", "2000", "1000"][rank - 1];
+    return (prizeConfig?.men?.[rank - 1] || defaultMen[rank - 1] || "").toString();
   }
   if (eventName === "Women 5 KM") {
-    return ["5000", "4000", "3000", "2000", "1000"][rank - 1];
+    return (prizeConfig?.women?.[rank - 1] || defaultWomen[rank - 1] || "").toString();
   }
   return "";
 }
@@ -410,6 +429,55 @@ function updateStats() {
   if (statWomenRevenue) statWomenRevenue.textContent = `₹${womenRevenue}`;
 }
 
+function setPrizeInputs(values, inputs) {
+  if (!inputs.length) return;
+  inputs.forEach((input, index) => {
+    if (!input) return;
+    const value = values && values[index] ? values[index] : "";
+    input.value = value;
+  });
+}
+
+async function loadPrizeConfig() {
+  try {
+    const configRef = doc(db, "settings", "prizes");
+    const snap = await getDoc(configRef);
+    if (snap.exists()) {
+      prizeConfig = snap.data();
+    } else {
+      prizeConfig = null;
+    }
+    setPrizeInputs(prizeConfig?.men, menPrizeInputs);
+    setPrizeInputs(prizeConfig?.women, womenPrizeInputs);
+  } catch (error) {
+    console.error("Failed to load prize config", error);
+  }
+}
+
+async function savePrizeConfig() {
+  if (!savePrizeConfigButton) return;
+  savePrizeConfigButton.disabled = true;
+  savePrizeConfigButton.textContent = "Saving...";
+  if (prizeSaveMessage) prizeSaveMessage.textContent = "";
+  try {
+    const men = menPrizeInputs.map((input) => (input && input.value ? String(input.value) : ""));
+    const women = womenPrizeInputs.map((input) => (input && input.value ? String(input.value) : ""));
+    await setDoc(doc(db, "settings", "prizes"), {
+      men,
+      women,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    prizeConfig = { men, women };
+    if (prizeSaveMessage) prizeSaveMessage.textContent = "Prize settings saved.";
+  } catch (error) {
+    console.error("Prize save failed", error);
+    if (prizeSaveMessage) prizeSaveMessage.textContent = "Could not save prizes.";
+  } finally {
+    savePrizeConfigButton.disabled = false;
+    savePrizeConfigButton.textContent = "Save Prize Settings";
+  }
+}
+
 async function loadRegistrations() {
   if (!tableBody) return;
   tableBody.innerHTML = "<tr><td colspan=\"13\">Loading registrations...</td></tr>";
@@ -446,6 +514,10 @@ if (eventFilter) {
 
 if (refreshButton) {
   refreshButton.addEventListener("click", loadRegistrations);
+}
+
+if (savePrizeConfigButton) {
+  savePrizeConfigButton.addEventListener("click", savePrizeConfig);
 }
 
 if (selectAllRows) {
@@ -590,6 +662,7 @@ onAuthStateChanged(auth, async (user) => {
       adminContent.style.display = "block";
     }
     showLoginMessage("", false);
+    loadPrizeConfig();
     loadRegistrations();
   } else {
     if (adminContent) {
