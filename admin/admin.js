@@ -204,6 +204,7 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
   const CLUB_NAME = "Kharagpur D Star Athletic Club (KDSAC)";
   const WEBSITE = "kdsac.in";
   const VENUE = "Kharagpur Sersa Stadium";
+  const EVENT_DATE = "10 May 2026";
 
   // Background
   const bg = ctx.createLinearGradient(0, 0, width, height);
@@ -368,10 +369,10 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
   // Footer line
   ctx.fillStyle = "rgba(255,255,255,0.58)";
   ctx.font = "700 16px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-  ctx.fillText("Participant Card • Share for free promotion", 74, height - 62);
+  ctx.fillText(`Event date: ${EVENT_DATE}  •  Venue: ${VENUE}`, 74, height - 62);
   ctx.fillStyle = "rgba(255,255,255,0.42)";
   ctx.font = "600 14px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-  ctx.fillText(`#KDSAC  •  ${EVENT_NAME}`, 74, height - 38);
+  ctx.fillText(`${WEBSITE}  •  ${EVENT_NAME}`, 74, height - 38);
 
   return canvas;
 }
@@ -608,129 +609,65 @@ function renderTable(list) {
     const fileList = document.createElement("div");
     fileList.className = "file-links";
 
+    // Files & Card actions (simple, admin-friendly)
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "file-item";
+
     if (reg.photoUrl) {
-      const photoWrap = document.createElement("div");
-      photoWrap.className = "file-item";
-      const photoButton = document.createElement("button");
-      photoButton.type = "button";
-      photoButton.className = "thumb-button";
-      photoButton.textContent = "View Photo";
-      photoButton.addEventListener("click", () => openImageModal(reg.photoUrl));
-      const photoLink = document.createElement("button");
-      photoLink.type = "button";
-      photoLink.className = "link-button";
-      photoLink.textContent = "Download";
-      photoLink.addEventListener("click", () => openSignedUrl(reg.photoUrl));
-      const replacePhoto = document.createElement("button");
-      replacePhoto.type = "button";
-      replacePhoto.className = "link-button";
-      replacePhoto.textContent = "Replace";
-      replacePhoto.addEventListener("click", async () => {
-        replacePhoto.disabled = true;
-        const oldText = replacePhoto.textContent;
-        replacePhoto.textContent = "Uploading...";
-        try {
-          const file = await pickFile({ accept: "image/*" });
-          if (!file) return;
-          const url = await uploadFileToCloudinary(file);
-          if (url) {
-            await updateDoc(doc(db, "registrations", reg.id), { photoUrl: url });
-            reg.photoUrl = url;
-            setCardMessage("Photo updated. Generate the card again.");
-          }
-        } catch (error) {
-          console.error(error);
-          setCardMessage("Photo upload failed.");
-        } finally {
-          replacePhoto.disabled = false;
-          replacePhoto.textContent = oldText;
-        }
-      });
-      const cardButton = document.createElement("button");
-      cardButton.type = "button";
-      cardButton.className = "link-button";
-      cardButton.textContent = "Card";
-      cardButton.addEventListener("click", async () => {
-        cardButton.disabled = true;
-        const oldText = cardButton.textContent;
-        cardButton.textContent = "Generating...";
-        try {
-          const base = getPublicBaseUrl();
-          const certId = await hashCertificateId(reg.nameLower || normalizeValue(reg.name), reg.dob || "");
-          const verifyUrl = `${base}/verify.html?cert=${encodeURIComponent(certId)}`;
-          const canvas = await buildParticipantCardCanvas(reg, { verifyUrl });
-          openCardModalWithCanvas(canvas, reg);
-        } catch (error) {
-          console.error(error);
-          setCardMessage("Could not generate card. Please try again.");
-          if (cardModal) cardModal.hidden = false;
-        } finally {
-          cardButton.disabled = false;
-          cardButton.textContent = oldText;
-        }
-      });
-      photoWrap.appendChild(photoButton);
-      photoWrap.appendChild(photoLink);
-      photoWrap.appendChild(replacePhoto);
-      photoWrap.appendChild(cardButton);
-      fileList.appendChild(photoWrap);
-    } else {
-      const missingWrap = document.createElement("div");
-      missingWrap.className = "file-item";
-      const uploadPhoto = document.createElement("button");
-      uploadPhoto.type = "button";
-      uploadPhoto.className = "link-button";
-      uploadPhoto.textContent = "Upload Photo";
-      uploadPhoto.addEventListener("click", async () => {
-        uploadPhoto.disabled = true;
-        const oldText = uploadPhoto.textContent;
-        uploadPhoto.textContent = "Uploading...";
-        try {
-          const file = await pickFile({ accept: "image/*" });
-          if (!file) return;
-          const url = await uploadFileToCloudinary(file);
-          if (url) {
-            await updateDoc(doc(db, "registrations", reg.id), { photoUrl: url });
-            reg.photoUrl = url;
-            setCardMessage("Photo uploaded. You can generate the card now.");
-          }
-        } catch (error) {
-          console.error(error);
-          setCardMessage("Photo upload failed.");
-        } finally {
-          uploadPhoto.disabled = false;
-          uploadPhoto.textContent = oldText;
-        }
-      });
-
-      const cardButton = document.createElement("button");
-      cardButton.type = "button";
-      cardButton.className = "link-button";
-      cardButton.textContent = "Card";
-      cardButton.addEventListener("click", async () => {
-        cardButton.disabled = true;
-        const oldText = cardButton.textContent;
-        cardButton.textContent = "Generating...";
-        try {
-          const base = getPublicBaseUrl();
-          const certId = await hashCertificateId(reg.nameLower || normalizeValue(reg.name), reg.dob || "");
-          const verifyUrl = `${base}/verify.html?cert=${encodeURIComponent(certId)}`;
-          const canvas = await buildParticipantCardCanvas(reg, { verifyUrl });
-          openCardModalWithCanvas(canvas, reg);
-        } catch (error) {
-          console.error(error);
-          setCardMessage("Could not generate card. Please try again.");
-          if (cardModal) cardModal.hidden = false;
-        } finally {
-          cardButton.disabled = false;
-          cardButton.textContent = oldText;
-        }
-      });
-
-      missingWrap.appendChild(uploadPhoto);
-      missingWrap.appendChild(cardButton);
-      fileList.appendChild(missingWrap);
+      const viewPhoto = document.createElement("button");
+      viewPhoto.type = "button";
+      viewPhoto.className = "thumb-button";
+      viewPhoto.textContent = "View Photo";
+      viewPhoto.addEventListener("click", () => openImageModal(reg.photoUrl));
+      actionsWrap.appendChild(viewPhoto);
     }
+
+    const cardButton = document.createElement("button");
+    cardButton.type = "button";
+    cardButton.className = "link-button";
+    cardButton.textContent = "Card";
+    cardButton.addEventListener("click", async () => {
+      cardButton.disabled = true;
+      const oldText = cardButton.textContent;
+      cardButton.textContent = "Generating...";
+      try {
+        const base = getPublicBaseUrl();
+        const certId = await hashCertificateId(reg.nameLower || normalizeValue(reg.name), reg.dob || "");
+        const verifyUrl = `${base}/verify.html?cert=${encodeURIComponent(certId)}`;
+        const canvas = await buildParticipantCardCanvas(reg, { verifyUrl });
+        openCardModalWithCanvas(canvas, reg);
+      } catch (error) {
+        console.error(error);
+        setCardMessage("Could not generate card. Please try again.");
+        if (cardModal) cardModal.hidden = false;
+      } finally {
+        cardButton.disabled = false;
+        cardButton.textContent = oldText;
+      }
+    });
+    actionsWrap.appendChild(cardButton);
+
+    if (reg.govtIdUrl) {
+      const viewGovtId = document.createElement("button");
+      viewGovtId.type = "button";
+      viewGovtId.className = "thumb-button";
+      viewGovtId.textContent = "View Govt ID";
+      viewGovtId.addEventListener("click", () => {
+        const isPdf = (reg.govtIdUrl || "").toLowerCase().includes(".pdf");
+        if (isPdf) {
+          openSignedUrl(reg.govtIdUrl);
+        } else {
+          openImageModal(reg.govtIdUrl);
+        }
+      });
+      actionsWrap.appendChild(viewGovtId);
+    }
+
+    if (!reg.photoUrl && !reg.govtIdUrl) {
+      actionsWrap.textContent = "-";
+    }
+
+    fileList.appendChild(actionsWrap);
 
     if (reg.govtIdUrl) {
       const idWrap = document.createElement("div");
