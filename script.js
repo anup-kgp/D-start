@@ -269,8 +269,6 @@ if (form && formResult) {
 
       const regNumber = await getNextRegistrationNumber();
       const registrationRef = doc(collection(db, "registrations"));
-      const cardToken = generateCardToken();
-      const cardRef = doc(db, "participant_cards", cardToken);
       if (submitStatus) {
         submitStatus.textContent = "Uploading documents...";
       }
@@ -308,7 +306,6 @@ if (form && formResult) {
         paymentStatus: payment.status,
         paymentMethod: payment.method,
         regNumber,
-        cardToken,
         photoUrl: photoUrl || "",
         govtIdUrl: govtIdUrl || "",
         status: "pending",
@@ -316,13 +313,6 @@ if (form && formResult) {
         rank: "",
         createdAt: serverTimestamp(),
       };
-
-      // Public verification doc for ID card QR (contains minimal fields)
-      await setDoc(cardRef, {
-        name: payload.name,
-        eventName: payload.eventName,
-        regNumber: payload.regNumber,
-      });
 
       await setDoc(registrationRef, payload);
 

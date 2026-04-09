@@ -282,7 +282,7 @@ function pickFile({ accept } = {}) {
   });
 }
 
-async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
+async function buildParticipantCardCanvas(reg, { qrText } = {}) {
   // 1080x675 shareable landscape ID card
   const width = 1080;
   const height = 675;
@@ -297,7 +297,7 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
   const WEBSITE = "kdsac.in";
   const VENUE = "Kharagpur Sersa Stadium";
   const EVENT_DATE = "10 May 2026";
-  const VERIFY_TEXT = "Verify at kdsac.in/card-verify.html";
+  const QR_NOTE = "Participant information";
 
   // Background
   const bg = ctx.createLinearGradient(0, 0, width, height);
@@ -439,7 +439,7 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
   labelValueRow("Category", reg?.eventName || "-", 2);
   labelValueRow("Venue", VENUE, 3);
 
-  // QR (verify link)
+  // QR (plain text)
   const qrSize = 176;
   const qrX = width - 260;
   const qrY = height - 250;
@@ -449,8 +449,8 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
   roundRectPath(ctx, qrBgX, qrBgY, qrSize + 36, qrSize + 64, 22);
   ctx.fill();
 
-  if (verifyUrl) {
-    const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+  if (qrText) {
+    const qrDataUrl = await QRCode.toDataURL(qrText, {
       margin: 1,
       width: qrSize,
       errorCorrectionLevel: "M",
@@ -465,11 +465,11 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
 
   ctx.fillStyle = "rgba(11,18,32,0.9)";
   ctx.font = "900 14px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-  ctx.fillText("Scan to verify card", qrBgX + 20, qrBgY + qrSize + 32);
+  ctx.fillText("Scan for details", qrBgX + 20, qrBgY + qrSize + 32);
 
   ctx.fillStyle = "rgba(11,18,32,0.72)";
   ctx.font = "700 12px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-  ctx.fillText(VERIFY_TEXT, qrBgX + 20, qrBgY + qrSize + 50);
+  ctx.fillText(QR_NOTE, qrBgX + 20, qrBgY + qrSize + 50);
 
   // Footer line
   ctx.fillStyle = "rgba(255,255,255,0.58)";
@@ -742,23 +742,17 @@ function renderTable(list) {
       const oldText = cardButton.textContent;
       cardButton.textContent = "Generating...";
       try {
-        const base = getPublicBaseUrl();
-        // Ensure existing registrations get a token + verification doc.
-        let token = reg.cardToken ? String(reg.cardToken) : "";
-        if (!token) {
-          token = generateCardToken();
-          await setDoc(doc(db, "participant_cards", token), {
-            name: reg.name || "",
-            eventName: reg.eventName || "",
-            regNumber: reg.regNumber || "",
-          });
-          await updateDoc(doc(db, "registrations", reg.id), { cardToken: token });
-          reg.cardToken = token;
-        }
-        const verifyUrl = token
-          ? `${base}/card-verify.html?card=${encodeURIComponent(token)}`
-          : `${base}/card-verify.html`;
-        const canvas = await buildParticipantCardCanvas(reg, { verifyUrl });
+        const EVENT_DATE = "10 May 2026";
+        const VENUE = "Kharagpur Sersa Stadium";
+        const qrText = [
+          "KDSAC Participant Card",
+          `Name: ${reg.name || "-"}`,
+          `Event: ${reg.eventName || "-"}`,
+          `Reg No: ${reg.regNumber || "-"}`,
+          `Date: ${EVENT_DATE}`,
+          `Venue: ${VENUE}`,
+        ].join("\n");
+        const canvas = await buildParticipantCardCanvas(reg, { qrText });
         openCardModalWithCanvas(canvas, reg);
       } catch (error) {
         console.error(error);
