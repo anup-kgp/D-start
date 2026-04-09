@@ -204,6 +204,19 @@
       </div>
     </div>
 
+    <div class="image-modal" id="cardModal" hidden>
+      <div class="image-modal-backdrop" id="cardModalBackdrop"></div>
+      <div class="image-modal-card">
+        <button class="button button-secondary button-small image-modal-close" id="cardModalClose" type="button">Close</button>
+        <img id="cardModalImg" alt="Participant card preview" />
+        <div class="bulk-actions" style="justify-content: flex-end; margin-top: 10px;">
+          <a class="button button-secondary button-small" id="cardDownloadJpg" href="#" download>Download JPG</a>
+          <a class="button button-primary button-small" id="cardDownloadPng" href="#" download>Download PNG</a>
+        </div>
+        <p class="form-note" id="cardModalMessage" style="margin-top: 8px;"></p>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="module" src="./admin.js"></script>
   </body>

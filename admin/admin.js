@@ -48,6 +48,13 @@ const imageModalImg = document.getElementById("imageModalImg");
 const imageModalClose = document.getElementById("imageModalClose");
 const imageModalBackdrop = document.getElementById("imageModalBackdrop");
 const imageModalDownload = document.getElementById("imageModalDownload");
+const cardModal = document.getElementById("cardModal");
+const cardModalImg = document.getElementById("cardModalImg");
+const cardModalClose = document.getElementById("cardModalClose");
+const cardModalBackdrop = document.getElementById("cardModalBackdrop");
+const cardDownloadPng = document.getElementById("cardDownloadPng");
+const cardDownloadJpg = document.getElementById("cardDownloadJpg");
+const cardModalMessage = document.getElementById("cardModalMessage");
 const directAccessToggle = document.getElementById("directAccessToggle");
 const generateDirectKey = document.getElementById("generateDirectKey");
 const copyDirectLink = document.getElementById("copyDirectLink");
@@ -58,6 +65,7 @@ let selectedIds = new Set();
 let currentUser = null;
 let isAdminUser = false;
 let directAccessKey = "";
+let lastCardCanvas = null;
 
 const EMAILJS_SERVICE_ID = "service_oelo1t3";
 const EMAILJS_RANKED_TEMPLATE_ID = "template_hkgh7an";
@@ -95,6 +103,229 @@ if (menuToggle && siteNav) {
 
 function normalizeValue(value) {
   return String(value || "").toLowerCase();
+}
+
+function setCardMessage(text) {
+  if (cardModalMessage) {
+    cardModalMessage.textContent = text || "";
+  }
+}
+
+function sanitizeFilename(value) {
+  return String(value || "participant-card")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "participant-card";
+}
+
+function loadImage(url, { crossOrigin } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!url) {
+      reject(new Error("Missing image url"));
+      return;
+    }
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = crossOrigin;
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+    img.src = url;
+  });
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+async function buildParticipantCardCanvas(reg) {
+  // 1080x675 (nice shareable landscape card)
+  const width = 1080;
+  const height = 675;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, "#0b1220");
+  bg.addColorStop(1, "#141a2b");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  // Accent ribbon
+  const accent = ctx.createLinearGradient(0, 0, width, 0);
+  accent.addColorStop(0, "#ff6a00");
+  accent.addColorStop(1, "#ffb100");
+  ctx.fillStyle = accent;
+  ctx.globalAlpha = 0.95;
+  roundRectPath(ctx, 40, 40, width - 80, 14, 8);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Card shell
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  roundRectPath(ctx, 40, 70, width - 80, height - 110, 28);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255,255,255,0.10)";
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, 40, 70, width - 80, height - 110, 28);
+  ctx.stroke();
+
+  // Logo + title
+  try {
+    const logo = await loadImage("../assets/logo.png");
+    const logoSize = 74;
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.drawImage(logo, 80, 105, logoSize, logoSize);
+    ctx.restore();
+  } catch {
+    // ignore logo if it can't load
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.font = "700 34px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("KDSAC Participant Card", 170, 150);
+
+  ctx.fillStyle = "rgba(255,255,255,0.70)";
+  ctx.font = "600 18px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("Kharagpur Mini Marathon 2026", 170, 180);
+
+  // Left: photo
+  const photoX = 92;
+  const photoY = 235;
+  const photoW = 280;
+  const photoH = 340;
+  ctx.fillStyle = "rgba(255,255,255,0.07)";
+  roundRectPath(ctx, photoX, photoY, photoW, photoH, 24);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.10)";
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, photoX, photoY, photoW, photoH, 24);
+  ctx.stroke();
+
+  if (reg?.photoUrl) {
+    const img = await loadImage(reg.photoUrl, { crossOrigin: "anonymous" });
+    // cover crop
+    const scale = Math.max(photoW / img.width, photoH / img.height);
+    const sw = photoW / scale;
+    const sh = photoH / scale;
+    const sx = Math.max(0, (img.width - sw) / 2);
+    const sy = Math.max(0, (img.height - sh) / 2);
+
+    ctx.save();
+    roundRectPath(ctx, photoX, photoY, photoW, photoH, 24);
+    ctx.clip();
+    ctx.drawImage(img, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "600 18px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText("No Photo", photoX + 90, photoY + 180);
+  }
+
+  // Right: info
+  const infoX = 420;
+  const infoY = 245;
+  const infoW = width - infoX - 92;
+  const rowGap = 44;
+
+  function labelValueRow(label, value, index) {
+    const y = infoY + index * rowGap;
+    ctx.fillStyle = "rgba(255,255,255,0.58)";
+    ctx.font = "700 14px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText(label.toUpperCase(), infoX, y);
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = "700 24px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    const text = String(value || "-");
+    ctx.fillText(text, infoX, y + 28);
+  }
+
+  // Badge
+  ctx.fillStyle = "rgba(255,106,0,0.18)";
+  roundRectPath(ctx, infoX, 205, 220, 34, 18);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,106,0,0.35)";
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, infoX, 205, 220, 34, 18);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.90)";
+  ctx.font = "800 14px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("OFFICIAL ENTRY", infoX + 16, 228);
+
+  labelValueRow("Name", reg?.name || "-", 0);
+  labelValueRow("Registration No", reg?.regNumber || "-", 1);
+  labelValueRow("Category", reg?.eventName || "-", 2);
+  labelValueRow("Venue", "Kharagpur Sersa Stadium", 3);
+
+  // Footer
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.font = "600 16px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  const footer = "Share this card to promote the event • #KDSAC #MiniMarathon2026";
+  ctx.fillText(footer, 80, height - 48);
+
+  // Subtle QR placeholder block (optional future)
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  roundRectPath(ctx, infoX + infoW - 130, height - 160, 110, 110, 16);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.10)";
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, infoX + infoW - 130, height - 160, 110, 110, 16);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.font = "700 12px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("KDSAC", infoX + infoW - 103, height - 98);
+
+  return canvas;
+}
+
+function openCardModalWithCanvas(canvas, reg) {
+  if (!cardModal || !cardModalImg || !cardDownloadPng || !cardDownloadJpg) return;
+  lastCardCanvas = canvas;
+  const safeName = sanitizeFilename(reg?.name || "participant");
+  const regNo = sanitizeFilename(reg?.regNumber || "reg");
+  const base = `${safeName}-${regNo}-card`;
+
+  try {
+    const pngUrl = canvas.toDataURL("image/png");
+    cardModalImg.src = pngUrl;
+    cardDownloadPng.href = pngUrl;
+    cardDownloadPng.download = `${base}.png`;
+  } catch (error) {
+    console.error(error);
+    setCardMessage("Unable to generate PNG preview. Check image permissions/CORS.");
+  }
+
+  // JPG generated lazily on open (keeps both ready)
+  try {
+    const jpgUrl = canvas.toDataURL("image/jpeg", 0.92);
+    cardDownloadJpg.href = jpgUrl;
+    cardDownloadJpg.download = `${base}.jpg`;
+  } catch (error) {
+    console.error(error);
+  }
+
+  setCardMessage("");
+  cardModal.hidden = false;
+}
+
+function closeCardModal() {
+  if (!cardModal || !cardModalImg) return;
+  cardModal.hidden = true;
+  cardModalImg.removeAttribute("src");
+  setCardMessage("");
+  lastCardCanvas = null;
 }
 
 function showLoginMessage(text, isError = false) {
@@ -304,8 +535,29 @@ function renderTable(list) {
       photoLink.className = "link-button";
       photoLink.textContent = "Download";
       photoLink.addEventListener("click", () => openSignedUrl(reg.photoUrl));
+      const cardButton = document.createElement("button");
+      cardButton.type = "button";
+      cardButton.className = "link-button";
+      cardButton.textContent = "Card";
+      cardButton.addEventListener("click", async () => {
+        cardButton.disabled = true;
+        const oldText = cardButton.textContent;
+        cardButton.textContent = "Generating...";
+        try {
+          const canvas = await buildParticipantCardCanvas(reg);
+          openCardModalWithCanvas(canvas, reg);
+        } catch (error) {
+          console.error(error);
+          setCardMessage("Could not generate card. Please try again.");
+          if (cardModal) cardModal.hidden = false;
+        } finally {
+          cardButton.disabled = false;
+          cardButton.textContent = oldText;
+        }
+      });
       photoWrap.appendChild(photoButton);
       photoWrap.appendChild(photoLink);
+      photoWrap.appendChild(cardButton);
       fileList.appendChild(photoWrap);
     }
 
@@ -485,6 +737,14 @@ if (imageModalClose) {
 
 if (imageModalBackdrop) {
   imageModalBackdrop.addEventListener("click", closeImageModal);
+}
+
+if (cardModalClose) {
+  cardModalClose.addEventListener("click", closeCardModal);
+}
+
+if (cardModalBackdrop) {
+  cardModalBackdrop.addEventListener("click", closeCardModal);
 }
 
 function applyFilters() {
