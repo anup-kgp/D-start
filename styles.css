@@ -1112,11 +1112,17 @@ a {
 }
 
 .admin-section .container {
-  width: min(1440px, calc(100% - 2rem));
+  width: calc(100% - 2rem);
+  max-width: none;
 }
 
 .admin-page {
   background: #0b1118;
+}
+
+.admin-page .container {
+  width: calc(100% - 2rem);
+  max-width: none;
 }
 
 .admin-page .site-header {

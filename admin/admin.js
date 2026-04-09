@@ -205,6 +205,7 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
   const WEBSITE = "kdsac.in";
   const VENUE = "Kharagpur Sersa Stadium";
   const EVENT_DATE = "10 May 2026";
+  const VERIFY_TEXT = "Verify at kdsac.in/verify.html";
 
   // Background
   const bg = ctx.createLinearGradient(0, 0, width, height);
@@ -364,7 +365,11 @@ async function buildParticipantCardCanvas(reg, { verifyUrl } = {}) {
 
   ctx.fillStyle = "rgba(11,18,32,0.9)";
   ctx.font = "800 14px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-  ctx.fillText("Scan to verify", qrBgX + 20, qrBgY + qrSize + 32);
+  ctx.fillText("Scan to open verify page", qrBgX + 20, qrBgY + qrSize + 32);
+
+  ctx.fillStyle = "rgba(11,18,32,0.72)";
+  ctx.font = "700 12px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText(VERIFY_TEXT, qrBgX + 20, qrBgY + qrSize + 50);
 
   // Footer line
   ctx.fillStyle = "rgba(255,255,255,0.58)";
@@ -613,27 +618,28 @@ function renderTable(list) {
     const actionsWrap = document.createElement("div");
     actionsWrap.className = "file-item";
 
-    if (reg.photoUrl) {
-      const viewPhoto = document.createElement("button");
-      viewPhoto.type = "button";
-      viewPhoto.className = "thumb-button";
-      viewPhoto.textContent = "View Photo";
-      viewPhoto.addEventListener("click", () => openImageModal(reg.photoUrl));
-      actionsWrap.appendChild(viewPhoto);
-    }
+    const viewPhoto = document.createElement("button");
+    viewPhoto.type = "button";
+    viewPhoto.className = "thumb-button";
+    viewPhoto.textContent = "View Photo";
+    viewPhoto.disabled = !reg.photoUrl;
+    viewPhoto.addEventListener("click", () => {
+      if (reg.photoUrl) openImageModal(reg.photoUrl);
+    });
+    actionsWrap.appendChild(viewPhoto);
 
     const cardButton = document.createElement("button");
     cardButton.type = "button";
     cardButton.className = "link-button";
-    cardButton.textContent = "Card";
+    cardButton.textContent = "View Card";
     cardButton.addEventListener("click", async () => {
       cardButton.disabled = true;
       const oldText = cardButton.textContent;
       cardButton.textContent = "Generating...";
       try {
         const base = getPublicBaseUrl();
-        const certId = await hashCertificateId(reg.nameLower || normalizeValue(reg.name), reg.dob || "");
-        const verifyUrl = `${base}/verify.html?cert=${encodeURIComponent(certId)}`;
+        // Do not embed participant-specific data in QR/link.
+        const verifyUrl = `${base}/verify.html`;
         const canvas = await buildParticipantCardCanvas(reg, { verifyUrl });
         openCardModalWithCanvas(canvas, reg);
       } catch (error) {
@@ -647,25 +653,21 @@ function renderTable(list) {
     });
     actionsWrap.appendChild(cardButton);
 
-    if (reg.govtIdUrl) {
-      const viewGovtId = document.createElement("button");
-      viewGovtId.type = "button";
-      viewGovtId.className = "thumb-button";
-      viewGovtId.textContent = "View Govt ID";
-      viewGovtId.addEventListener("click", () => {
-        const isPdf = (reg.govtIdUrl || "").toLowerCase().includes(".pdf");
-        if (isPdf) {
-          openSignedUrl(reg.govtIdUrl);
-        } else {
-          openImageModal(reg.govtIdUrl);
-        }
-      });
-      actionsWrap.appendChild(viewGovtId);
-    }
-
-    if (!reg.photoUrl && !reg.govtIdUrl) {
-      actionsWrap.textContent = "-";
-    }
+    const viewGovtId = document.createElement("button");
+    viewGovtId.type = "button";
+    viewGovtId.className = "thumb-button";
+    viewGovtId.textContent = "View Govt ID";
+    viewGovtId.disabled = !reg.govtIdUrl;
+    viewGovtId.addEventListener("click", () => {
+      if (!reg.govtIdUrl) return;
+      const isPdf = (reg.govtIdUrl || "").toLowerCase().includes(".pdf");
+      if (isPdf) {
+        openSignedUrl(reg.govtIdUrl);
+      } else {
+        openImageModal(reg.govtIdUrl);
+      }
+    });
+    actionsWrap.appendChild(viewGovtId);
 
     fileList.appendChild(actionsWrap);
 
