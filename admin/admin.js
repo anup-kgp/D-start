@@ -28,6 +28,7 @@ const statusFilter = document.getElementById("statusFilter");
 const genderFilter = document.getElementById("genderFilter");
 const eventFilter = document.getElementById("eventFilter");
 const refreshButton = document.getElementById("refreshButton");
+const exportCsvButton = document.getElementById("exportCsvButton");
 const selectAllRows = document.getElementById("selectAllRows");
 const bulkStatus = document.getElementById("bulkStatus");
 const applyBulk = document.getElementById("applyBulk");
@@ -883,6 +884,99 @@ function applyFilters() {
   });
 
   renderTable(filtered);
+}
+
+function escapeCsv(value) {
+  const str = String(value ?? "");
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, "\"\"")}"`;
+  }
+  return str;
+}
+
+function downloadCsv(filename, rows) {
+  const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function getFilteredRegistrations() {
+  const searchValue = normalizeValue(adminSearch ? adminSearch.value : "");
+  const statusValue = statusFilter ? statusFilter.value : "all";
+  const genderValue = genderFilter ? genderFilter.value : "all";
+  const eventValue = eventFilter ? eventFilter.value : "all";
+
+  return registrations.filter((reg) => {
+    const matchesSearch = !searchValue
+      || normalizeValue(reg.name).includes(searchValue)
+      || normalizeValue(reg.phone).includes(searchValue)
+      || normalizeValue(reg.email).includes(searchValue);
+    const currentStatus = reg.certificateStatus || "pending";
+    const matchesStatus = statusValue === "all" || currentStatus === statusValue;
+    const matchesGender = genderValue === "all" || reg.gender === genderValue;
+    const matchesEvent = eventValue === "all" || reg.eventName === eventValue;
+    return matchesSearch && matchesStatus && matchesGender && matchesEvent;
+  });
+}
+
+if (exportCsvButton) {
+  exportCsvButton.addEventListener("click", () => {
+    const list = getFilteredRegistrations();
+    const rows = [
+      [
+        "Reg No",
+        "Name",
+        "Father Name",
+        "DOB",
+        "Gender",
+        "Event",
+        "Phone",
+        "Email",
+        "Medical Fitness",
+        "T-Shirt",
+        "Fee",
+        "Payment Status",
+        "Payment Method",
+        "Payment Id",
+        "Order Id",
+        "Certificate Status",
+        "Rank",
+        "Photo URL",
+        "Govt ID URL",
+        "Submitted At",
+      ],
+      ...list.map((reg) => ([
+        reg.regNumber || "",
+        reg.name || "",
+        reg.fatherName || "",
+        reg.dob || "",
+        reg.gender || "",
+        reg.eventName || "",
+        reg.phone || "",
+        reg.email || "",
+        reg.medicalCondition || "",
+        reg.tshirtSize || "",
+        reg.fee || "",
+        reg.paymentStatus || "",
+        reg.paymentMethod || "",
+        reg.paymentId || "",
+        reg.paymentOrderId || "",
+        reg.certificateStatus || "pending",
+        reg.rank || "",
+        reg.photoUrl || "",
+        reg.govtIdUrl || "",
+        reg.createdAt?.seconds ? new Date(reg.createdAt.seconds * 1000).toLocaleString() : "",
+      ])),
+    ];
+    downloadCsv("kdsac-registrations.csv", rows);
+  });
 }
 
 function updateStats() {

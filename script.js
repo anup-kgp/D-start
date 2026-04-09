@@ -320,9 +320,24 @@ if (form && formResult) {
       // Public verification doc for ID card QR (contains minimal fields)
       await setDoc(cardRef, {
         name: payload.name,
+        nameLower: payload.nameLower,
+        fatherName: payload.fatherName,
+        gender: payload.gender,
         eventName: payload.eventName,
+        dob: payload.dob,
+        phone: payload.phone,
+        email: payload.email,
+        medicalCondition: payload.medicalCondition,
+        tshirtSize: payload.tshirtSize,
+        fee: payload.fee,
         regNumber: payload.regNumber,
-        createdAt: serverTimestamp(),
+        photoUrl: payload.photoUrl,
+        paymentId: payload.paymentId,
+        paymentOrderId: payload.paymentOrderId,
+        paymentStatus: payload.paymentStatus,
+        paymentMethod: payload.paymentMethod,
+        createdAt: payload.createdAt,
+        paymentVerifiedAt: payload.paymentStatus === "paid" ? serverTimestamp() : null,
       });
 
       await setDoc(registrationRef, payload);
