@@ -263,6 +263,23 @@ if (form && formResult) {
 
       const regNumber = await getNextRegistrationNumber();
       const registrationRef = doc(collection(db, "registrations"));
+      if (submitStatus) {
+        submitStatus.textContent = "Uploading documents...";
+      }
+
+      let photoUrl = "";
+      let govtIdUrl = "";
+      try {
+        const uploads = await Promise.allSettled([
+          uploadFile(photoFile),
+          uploadFile(govtIdFile),
+        ]);
+        photoUrl = uploads[0].status === "fulfilled" ? uploads[0].value : "";
+        govtIdUrl = uploads[1].status === "fulfilled" ? uploads[1].value : "";
+      } catch (uploadError) {
+        console.error("Upload failed", uploadError);
+      }
+
       const payload = {
         name: String(name || "").trim(),
         nameLower: String(name || "").trim().toLowerCase(),
@@ -283,8 +300,8 @@ if (form && formResult) {
         paymentStatus: payment.status,
         paymentMethod: payment.method,
         regNumber,
-        photoUrl: "",
-        govtIdUrl: "",
+        photoUrl: photoUrl || "",
+        govtIdUrl: govtIdUrl || "",
         status: "pending",
         certificateStatus: "pending",
         rank: "",
@@ -292,29 +309,6 @@ if (form && formResult) {
       };
 
       await setDoc(registrationRef, payload);
-
-      if (submitStatus) {
-        submitStatus.textContent = "Uploading documents...";
-      }
-      let photoUrl = "";
-      let govtIdUrl = "";
-      try {
-        const uploads = await Promise.allSettled([
-          uploadFile(photoFile),
-          uploadFile(govtIdFile),
-        ]);
-        photoUrl = uploads[0].status === "fulfilled" ? uploads[0].value : "";
-        govtIdUrl = uploads[1].status === "fulfilled" ? uploads[1].value : "";
-      } catch (uploadError) {
-        console.error("Upload failed", uploadError);
-      }
-
-      if (photoUrl || govtIdUrl) {
-        await updateDoc(registrationRef, {
-          photoUrl: photoUrl || "",
-          govtIdUrl: govtIdUrl || "",
-        });
-      }
 
       if (submitStatus) {
         submitStatus.textContent = "Finalizing registration...";
