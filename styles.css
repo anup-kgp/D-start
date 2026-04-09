@@ -1684,24 +1684,9 @@ a {
   font-weight: 700;
 }
 
+/* keep reg no as plain text on public verify page */
 .card-verify-reg {
-  appearance: none;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  display: inline-flex;
-  justify-content: center;
-  width: fit-content;
-  margin-inline: auto;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  text-decoration-thickness: 2px;
-}
-
-.card-verify-reg:disabled {
   cursor: default;
-  opacity: 0.7;
   text-decoration: none;
 }
 

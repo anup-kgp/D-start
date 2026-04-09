@@ -57,6 +57,12 @@ const cardModalBackdrop = document.getElementById("cardModalBackdrop");
 const cardDownloadPng = document.getElementById("cardDownloadPng");
 const cardDownloadJpg = document.getElementById("cardDownloadJpg");
 const cardModalMessage = document.getElementById("cardModalMessage");
+const adminDetailsModal = document.getElementById("adminDetailsModal");
+const adminDetailsBackdrop = document.getElementById("adminDetailsBackdrop");
+const adminDetailsClose = document.getElementById("adminDetailsClose");
+const adminDetailsPhoto = document.getElementById("adminDetailsPhoto");
+const adminDetailsTitle = document.getElementById("adminDetailsTitle");
+const adminDetailsList = document.getElementById("adminDetailsList");
 const directAccessToggle = document.getElementById("directAccessToggle");
 const generateDirectKey = document.getElementById("generateDirectKey");
 const copyDirectLink = document.getElementById("copyDirectLink");
@@ -109,6 +115,85 @@ if (menuToggle && siteNav) {
 
 function normalizeValue(value) {
   return String(value || "").toLowerCase();
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  if (typeof value === "object" && typeof value.seconds === "number") {
+    return new Date(value.seconds * 1000).toLocaleString();
+  }
+  return String(value);
+}
+
+function computeAge(dob) {
+  if (!dob) return "";
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return "";
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age -= 1;
+  return age > 0 ? String(age) : "";
+}
+
+function renderAdminDetailsItem(label, value) {
+  if (!adminDetailsList) return;
+  const item = document.createElement("div");
+  item.className = "card-details-item";
+  const k = document.createElement("span");
+  k.textContent = label;
+  const v = document.createElement("strong");
+  v.textContent = value ? String(value) : "-";
+  item.appendChild(k);
+  item.appendChild(v);
+  adminDetailsList.appendChild(item);
+}
+
+function openAdminDetails(reg) {
+  if (!adminDetailsModal || !adminDetailsList) return;
+  adminDetailsList.innerHTML = "";
+  if (adminDetailsTitle) adminDetailsTitle.textContent = "Participant Details";
+
+  if (adminDetailsPhoto) {
+    if (reg?.photoUrl) {
+      adminDetailsPhoto.src = reg.photoUrl;
+      adminDetailsPhoto.hidden = false;
+    } else {
+      adminDetailsPhoto.removeAttribute("src");
+      adminDetailsPhoto.hidden = true;
+    }
+  }
+
+  const age = computeAge(reg?.dob);
+  renderAdminDetailsItem("Name", reg?.name);
+  renderAdminDetailsItem("Registration No", reg?.regNumber);
+  renderAdminDetailsItem("Event", reg?.eventName);
+  renderAdminDetailsItem("Gender", reg?.gender);
+  renderAdminDetailsItem("DOB", reg?.dob);
+  renderAdminDetailsItem("Age", age);
+  renderAdminDetailsItem("Phone", reg?.phone);
+  renderAdminDetailsItem("Email", reg?.email);
+  renderAdminDetailsItem("Father Name", reg?.fatherName);
+  renderAdminDetailsItem("T-Shirt Size", reg?.tshirtSize);
+  renderAdminDetailsItem("Medical Fitness", reg?.medicalCondition);
+  renderAdminDetailsItem("Fee", reg?.fee ? `₹${reg.fee}` : "");
+  renderAdminDetailsItem("Payment Status", reg?.paymentStatus);
+  renderAdminDetailsItem("Payment Method", reg?.paymentMethod);
+  renderAdminDetailsItem("Payment Id", reg?.paymentId);
+  renderAdminDetailsItem("Order Id", reg?.paymentOrderId);
+  renderAdminDetailsItem("Submitted At", formatDateTime(reg?.createdAt));
+  renderAdminDetailsItem("Card Token", reg?.cardToken);
+  renderAdminDetailsItem("Certificate Status", reg?.certificateStatus || "pending");
+  renderAdminDetailsItem("Rank", reg?.rank);
+
+  adminDetailsModal.hidden = false;
+}
+
+function closeAdminDetails() {
+  if (!adminDetailsModal) return;
+  adminDetailsModal.hidden = true;
+  if (adminDetailsPhoto) adminDetailsPhoto.removeAttribute("src");
+  if (adminDetailsList) adminDetailsList.innerHTML = "";
 }
 
 function generateCardToken() {
@@ -602,7 +687,12 @@ function renderTable(list) {
     selectCell.appendChild(checkbox);
 
     const regCell = document.createElement("td");
-    regCell.textContent = reg.regNumber || "-";
+    const regButton = document.createElement("button");
+    regButton.type = "button";
+    regButton.className = "link-button";
+    regButton.textContent = reg.regNumber || "-";
+    regButton.addEventListener("click", () => openAdminDetails(reg));
+    regCell.appendChild(regButton);
 
     const nameCell = document.createElement("td");
     nameCell.textContent = reg.name || "-";
@@ -863,6 +953,14 @@ if (cardModalClose) {
 
 if (cardModalBackdrop) {
   cardModalBackdrop.addEventListener("click", closeCardModal);
+}
+
+if (adminDetailsClose) {
+  adminDetailsClose.addEventListener("click", closeAdminDetails);
+}
+
+if (adminDetailsBackdrop) {
+  adminDetailsBackdrop.addEventListener("click", closeAdminDetails);
 }
 
 function applyFilters() {

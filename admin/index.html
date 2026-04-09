@@ -218,6 +218,22 @@
       </div>
     </div>
 
+    <div class="image-modal" id="adminDetailsModal" hidden>
+      <div class="image-modal-backdrop" id="adminDetailsBackdrop"></div>
+      <div class="image-modal-card card-details-card">
+        <button class="button button-secondary button-small image-modal-close" id="adminDetailsClose" type="button">Close</button>
+        <div class="card-details-grid">
+          <div class="card-details-photo">
+            <img id="adminDetailsPhoto" alt="Participant photo" />
+          </div>
+          <div class="card-details-body">
+            <h3 id="adminDetailsTitle">Participant Details</h3>
+            <div class="card-details-list" id="adminDetailsList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="module" src="./admin.js"></script>
   </body>
