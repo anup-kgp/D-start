@@ -671,27 +671,6 @@ function renderTable(list) {
 
     fileList.appendChild(actionsWrap);
 
-    if (reg.govtIdUrl) {
-      const idWrap = document.createElement("div");
-      idWrap.className = "file-item";
-      const isPdf = (reg.govtIdUrl || "").toLowerCase().includes(".pdf");
-      if (!isPdf) {
-        const idButton = document.createElement("button");
-        idButton.type = "button";
-        idButton.className = "thumb-button";
-        idButton.textContent = "View ID";
-        idButton.addEventListener("click", () => openImageModal(reg.govtIdUrl));
-        idWrap.appendChild(idButton);
-      }
-      const idLink = document.createElement("button");
-      idLink.type = "button";
-      idLink.className = "link-button";
-      idLink.textContent = isPdf ? "Govt ID (PDF)" : "Govt ID";
-      idLink.addEventListener("click", () => openSignedUrl(reg.govtIdUrl));
-      idWrap.appendChild(idLink);
-      fileList.appendChild(idWrap);
-    }
-
     if (!reg.photoUrl && !reg.govtIdUrl) {
       fileList.textContent = "-";
     }
