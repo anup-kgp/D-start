@@ -143,6 +143,17 @@ a {
   position: relative;
 }
 
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 106, 0, 0.16), transparent 20%),
+    radial-gradient(circle at 82% 24%, rgba(255, 255, 255, 0.08), transparent 24%);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
 .hero-grid,
 .registration-grid,
 .highlights-grid,
@@ -168,6 +179,12 @@ a {
 .registration-grid {
   grid-template-columns: 1.15fr 0.85fr;
   align-items: center;
+}
+
+.hero-grid,
+.future-events-grid {
+  position: relative;
+  z-index: 1;
 }
 
 .eyebrow {
@@ -353,6 +370,54 @@ a {
 
 .panel-footer strong {
   font-size: 1rem;
+}
+
+.future-events-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.future-event-card {
+  padding: 1.3rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.8rem;
+}
+
+.future-event-card-featured {
+  background:
+    radial-gradient(circle at top left, rgba(196, 15, 47, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.future-event-card h3 {
+  margin: 0;
+  font-size: 1.55rem;
+}
+
+.future-event-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.future-event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.future-event-meta span {
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--accent-soft);
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .hero-card-highlights {
@@ -639,10 +704,18 @@ a {
   line-height: 1.75;
 }
 
+.gallery-copy h2 {
+  margin-top: 0;
+}
+
 .gallery-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.gallery-cards-featured {
+  align-items: stretch;
 }
 
 .gallery-card {
@@ -671,6 +744,43 @@ a {
   margin: 0;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.gallery-card-placeholder {
+  display: grid;
+  gap: 1rem;
+}
+
+.gallery-placeholder {
+  min-height: 180px;
+  border-radius: 18px;
+  padding: 1rem;
+  display: grid;
+  align-content: end;
+  gap: 0.35rem;
+  background:
+    linear-gradient(180deg, rgba(5, 11, 20, 0.08), rgba(5, 11, 20, 0.72)),
+    radial-gradient(circle at top, rgba(255, 106, 0, 0.28), transparent 60%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+}
+
+.gallery-placeholder span {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--white);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.gallery-placeholder small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.88rem;
 }
 
 .gallery-stat {
@@ -998,6 +1108,7 @@ a {
   .gallery-grid,
   .inner-hero-grid,
   .cta-panel,
+  .future-events-grid,
   .event-selection-grid,
   .form-grid,
   .event-grid,
@@ -1252,6 +1363,27 @@ a {
   gap: 1.2rem;
 }
 
+.whatsapp-mailer-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.whatsapp-mailer-grid label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--white);
+  font-weight: 600;
+}
+
+.registration-closed-banner {
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 15, 47, 0.3);
+  background: rgba(196, 15, 47, 0.12);
+  color: #ffd5dd;
+  font-weight: 700;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -1310,6 +1442,11 @@ a {
   background: rgba(7, 20, 32, 0.7);
   color: var(--text);
   font-family: "Manrope", sans-serif;
+}
+
+textarea.input-field {
+  min-height: 120px;
+  resize: vertical;
 }
 
 .table-wrap {
@@ -2189,5 +2326,3 @@ a {
     margin-top: 0.8rem;
   }
 }
-
-

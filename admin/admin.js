@@ -18,6 +18,7 @@ import {
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { WHATSAPP_INVITE_EMAILJS_SETUP } from "../emailjs-whatsapp-invite.setup.js";
 
 const menuToggle = document.getElementById("menuToggle");
 const siteNav = document.getElementById("siteNav");
@@ -67,6 +68,10 @@ const directAccessToggle = document.getElementById("directAccessToggle");
 const generateDirectKey = document.getElementById("generateDirectKey");
 const copyDirectLink = document.getElementById("copyDirectLink");
 const directAccessMessage = document.getElementById("directAccessMessage");
+const whatsappGroupLink = document.getElementById("whatsappGroupLink");
+const sendMaleInviteButton = document.getElementById("sendMaleInviteButton");
+const sendFemaleInviteButton = document.getElementById("sendFemaleInviteButton");
+const whatsappMailerMessage = document.getElementById("whatsappMailerMessage");
 
 let registrations = [];
 let selectedIds = new Set();
@@ -557,6 +562,17 @@ function setDirectMessage(text) {
   }
 }
 
+function setWhatsappMailerMessage(text, isError = false) {
+  if (!whatsappMailerMessage) return;
+  whatsappMailerMessage.textContent = text;
+  whatsappMailerMessage.classList.toggle("is-error", isError);
+}
+
+function showWhatsAppMailerComingSoon() {
+  const setupFile = WHATSAPP_INVITE_EMAILJS_SETUP?.setupFile || "emailjs-whatsapp-invite.setup.js";
+  setWhatsappMailerMessage(`Coming soon. The future EmailJS setup is saved in ${setupFile}.`, false);
+}
+
 async function loadDirectAccess() {
   try {
     const snap = await getDoc(doc(db, "settings", "directAccess"));
@@ -639,6 +655,11 @@ if (copyDirectLink) {
     }
   });
 }
+
+if (whatsappGroupLink) whatsappGroupLink.disabled = true;
+if (sendMaleInviteButton) sendMaleInviteButton.disabled = true;
+if (sendFemaleInviteButton) sendFemaleInviteButton.disabled = true;
+showWhatsAppMailerComingSoon();
 async function hashCertificateId(nameLower, dob) {
   const input = `${nameLower}|${dob}`;
   const data = new TextEncoder().encode(input);

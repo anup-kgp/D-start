@@ -176,20 +176,43 @@
             <div class="admin-panel">
               <div class="panel-header">
                 <div>
-                  <h3>Direct Registration Access</h3>
-                  <p class="muted">Generate a secure link for cash/failed-payment entries. Disable anytime.</p>
+                  <h3>Manual Registration Link</h3>
+                  <p class="muted">Generate a secure link for admin-approved cash or offline entries even after public registration closes.</p>
                 </div>
               </div>
 
               <div class="bulk-actions">
                 <label class="bulk-select">
                   <input type="checkbox" id="directAccessToggle" />
-                  Enable direct registration link
+                  Enable manual registration link
                 </label>
                 <button class="button button-secondary button-small" id="generateDirectKey" type="button">Generate Key</button>
                 <button class="button button-primary button-small" id="copyDirectLink" type="button">Copy Link</button>
               </div>
-              <p class="form-note" id="directAccessMessage"></p>
+              <p class="form-note" id="directAccessMessage">Use this only for approved manual registrations.</p>
+            </div>
+
+            <div class="admin-panel">
+              <div class="panel-header">
+                <div>
+                  <h3>WhatsApp Group Invite Mailer</h3>
+                  <p class="muted">Coming soon. The EmailJS setup is stored in a root config file for future activation.</p>
+                </div>
+              </div>
+
+              <div class="whatsapp-mailer-grid">
+                <label>
+                  WhatsApp Group Link
+                  <input class="input-field" type="url" id="whatsappGroupLink" placeholder="https://chat.whatsapp.com/..." disabled />
+                </label>
+              </div>
+
+              <div class="bulk-actions">
+                <button class="button button-secondary" id="sendMaleInviteButton" type="button" disabled>Coming Soon</button>
+                <button class="button button-primary" id="sendFemaleInviteButton" type="button" disabled>Coming Soon</button>
+              </div>
+
+              <p class="form-note" id="whatsappMailerMessage"></p>
             </div>
           </div>
         </div>

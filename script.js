@@ -21,6 +21,10 @@ const genderSelect = document.getElementById("genderSelect");
 const submitButton = form ? form.querySelector("button[type=\"submit\"]") : null;
 const submitStatus = document.getElementById("submitStatus");
 const directPaymentNote = document.getElementById("directPaymentNote");
+const registrationClosedBanner = document.getElementById("registrationClosedBanner");
+
+const REGISTRATION_END_DATE = "2026-04-30T23:59:59+05:30";
+const registrationClosed = new Date() > new Date(REGISTRATION_END_DATE);
 
 
 const EMAILJS_SERVICE_ID = "service_oelo1t3";
@@ -38,6 +42,7 @@ const directParams = new URLSearchParams(window.location.search);
 const directPayment = directParams.get("direct") === "1";
 const directKey = directParams.get("key") || "";
 let directAllowed = false;
+let manualRegistrationEnabled = false;
 
 async function hashDirectKey(value) {
   const data = new TextEncoder().encode(value);
@@ -59,6 +64,9 @@ async function checkDirectAccess() {
     return false;
   }
 }
+
+const directAccessVerified = await checkDirectAccess();
+directAllowed = directAccessVerified;
 
 async function createRazorpayOrder(amount, name, category) {
   const response = await fetch("/api/create-order", {
@@ -182,6 +190,70 @@ async function getNextRegistrationNumber() {
   return String(nextNumber).padStart(4, "0");
 }
 
+function setRegistrationClosedState() {
+  if (!form) return;
+
+  if (registrationClosedBanner) {
+    registrationClosedBanner.hidden = false;
+  }
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Registration Closed";
+  }
+
+  form.querySelectorAll("input, select, textarea, button").forEach((field) => {
+    if (field === submitButton) return;
+    if (field.id === "menuToggle") return;
+    if (field.type === "hidden") return;
+    field.disabled = true;
+  });
+
+  if (submitStatus) {
+    submitStatus.textContent = "Registration closed on 30 April 2026.";
+    submitStatus.classList.remove("is-loading");
+    submitStatus.classList.add("is-error");
+  }
+
+  if (directPaymentNote && directPayment) {
+    directPaymentNote.hidden = false;
+    directPaymentNote.textContent = "Registration is closed. Direct registration is no longer available.";
+  }
+}
+
+function enableManualRegistrationState() {
+  if (!form) return;
+
+  manualRegistrationEnabled = true;
+
+  if (registrationClosedBanner) {
+    registrationClosedBanner.hidden = false;
+    registrationClosedBanner.textContent = "Manual registration link active. This entry will be saved by admin.";
+  }
+
+  form.querySelectorAll("input, select, textarea, button").forEach((field) => {
+    if (field.id === "menuToggle") return;
+    if (field.type === "hidden") return;
+    field.disabled = false;
+  });
+
+  if (submitButton) {
+    submitButton.disabled = false;
+    submitButton.textContent = "Submit Registration";
+  }
+
+  if (submitStatus) {
+    submitStatus.textContent = "Manual registration link verified. You can submit this entry.";
+    submitStatus.classList.remove("is-error");
+    submitStatus.classList.remove("is-loading");
+  }
+
+  if (directPaymentNote && directPayment) {
+    directPaymentNote.hidden = false;
+    directPaymentNote.textContent = "Manual registration link active. Submit this entry through admin approval.";
+  }
+}
+
 if (menuToggle && siteNav) {
   menuToggle.addEventListener("click", () => {
     const isOpen = siteNav.classList.toggle("is-open");
@@ -197,17 +269,37 @@ if (menuToggle && siteNav) {
 }
 
 if (form && formResult) {
-  checkDirectAccess().then((allowed) => {
-    directAllowed = allowed;
-    if (directPaymentNote && directPayment) {
-      directPaymentNote.hidden = false;
-      directPaymentNote.textContent = allowed
-        ? "Direct registration enabled (payment already received)."
-        : "Direct link invalid or disabled. Payment required.";
+  if (registrationClosed) {
+    setRegistrationClosedState();
+    if (directPayment) {
+      if (directAccessVerified) {
+        enableManualRegistrationState();
+      } else if (directPaymentNote) {
+        directPaymentNote.hidden = false;
+        directPaymentNote.textContent = "Direct link invalid or disabled. Payment required.";
+      }
+    } else if (formResult) {
+      formResult.textContent = "Registration is now closed.";
+      if (successCard) successCard.hidden = false;
     }
-  });
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (registrationClosed && !manualRegistrationEnabled) {
+      if (submitStatus) {
+        submitStatus.textContent = "Registration closed on 30 April 2026.";
+        submitStatus.classList.add("is-error");
+      }
+      if (formResult) {
+        formResult.textContent = "Registration is closed. New entries are no longer being accepted.";
+      }
+      if (successCard) {
+        successCard.hidden = false;
+      }
+      return;
+    }
 
     const formData = new FormData(form);
     const name = formData.get("name");
@@ -272,7 +364,6 @@ if (form && formResult) {
       if (submitStatus) {
         submitStatus.textContent = "Uploading documents...";
       }
-
       let photoUrl = "";
       let govtIdUrl = "";
       try {
