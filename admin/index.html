@@ -47,50 +47,85 @@
           </div>
 
           <div class="admin-content" id="adminContent" hidden>
-            <div class="admin-topbar">
-              <div class="admin-brand">
-                <p class="eyebrow">Admin Console</p>
-                <h2>KDSAC Registration Management</h2>
-                <p class="muted">Secure access for authorized event managers only.</p>
-              </div>
-              <div class="admin-topbar-actions">
-                <div class="admin-user">
-                  <span id="adminEmail">Signed in</span>
+            <div class="admin-layout">
+              <aside class="admin-sidebar" aria-label="Admin navigation">
+                <div class="admin-sidebar-card">
+                  <div class="admin-sidebar-brand">
+                    <img src="../assets/logo.png" alt="KDSAC logo" />
+                    <div>
+                      <strong>KDSAC Admin</strong>
+                      <small>Dashboard</small>
+                    </div>
+                  </div>
+                  <div class="admin-sidebar-user">
+                    <span class="admin-sidebar-label">Signed in as</span>
+                    <strong id="adminEmail">Signed in</strong>
+                  </div>
                 </div>
-                <button class="button button-secondary button-small" id="logoutButton" type="button">Sign out</button>
-              </div>
-            </div>
 
-            <div class="admin-stats">
-              <div class="stat-card">
-                <span>Total Registrations</span>
-                <strong id="statTotal">--</strong>
-              </div>
-              <div class="stat-card">
-                <span>Pending Certificates</span>
-                <strong id="statPending">--</strong>
-              </div>
-              <div class="stat-card">
-                <span>Participants</span>
-                <strong id="statParticipant">--</strong>
-              </div>
-              <div class="stat-card">
-                <span>Ranked</span>
-                <strong id="statRanked">--</strong>
-              </div>
-              <div class="stat-card">
-                <span>Total Collection</span>
-                <strong id="statRevenue">--</strong>
-              </div>
-              <div class="stat-card">
-                <span>Men Collection</span>
-                <strong id="statMenRevenue">--</strong>
-              </div>
-              <div class="stat-card">
-                <span>Women Collection</span>
-                <strong id="statWomenRevenue">--</strong>
-              </div>
-            </div>
+                <div class="admin-sidebar-card">
+                  <p class="admin-sidebar-title">Quick links</p>
+                  <nav class="admin-side-links">
+                    <a href="../index.html">Public Website</a>
+                    <a href="../certificate.html">Certificates</a>
+                    <a href="../verify.html">Verify</a>
+                    <a href="../register.html">Registration</a>
+                  </nav>
+                </div>
+
+                <div class="admin-sidebar-card">
+                  <p class="admin-sidebar-title">Session</p>
+                  <button class="button button-secondary button-full" id="logoutButton" type="button">Sign out</button>
+                  <p class="fine-print" style="margin: 0.8rem 0 0;">
+                    Tip: Use search + filters to quickly find entries, then set certificate status and ranks.
+                  </p>
+                </div>
+              </aside>
+
+              <div class="admin-main">
+                <div class="admin-topbar">
+                  <div class="admin-brand">
+                    <p class="eyebrow">Admin Console</p>
+                    <h2>KDSAC Registration Management</h2>
+                    <p class="muted">Secure access for authorized event managers only.</p>
+                  </div>
+                  <div class="admin-topbar-actions">
+                    <div class="admin-user">
+                      <span>Welcome</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="admin-stats">
+                  <div class="stat-card">
+                    <span>Total Registrations</span>
+                    <strong id="statTotal">--</strong>
+                  </div>
+                  <div class="stat-card">
+                    <span>Pending Certificates</span>
+                    <strong id="statPending">--</strong>
+                  </div>
+                  <div class="stat-card">
+                    <span>Participants</span>
+                    <strong id="statParticipant">--</strong>
+                  </div>
+                  <div class="stat-card">
+                    <span>Ranked</span>
+                    <strong id="statRanked">--</strong>
+                  </div>
+                  <div class="stat-card">
+                    <span>Total Collection</span>
+                    <strong id="statRevenue">--</strong>
+                  </div>
+                  <div class="stat-card">
+                    <span>Men Collection</span>
+                    <strong id="statMenRevenue">--</strong>
+                  </div>
+                  <div class="stat-card">
+                    <span>Women Collection</span>
+                    <strong id="statWomenRevenue">--</strong>
+                  </div>
+                </div>
 
             <div class="admin-panel">
               <div class="panel-header">
@@ -214,7 +249,8 @@
 
               <p class="form-note" id="whatsappMailerMessage"></p>
             </div>
-          </div>
+              </div>
+            </div>
         </div>
       </section>
     </main>
