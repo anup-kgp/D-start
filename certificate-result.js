@@ -3,16 +3,12 @@ import {
   doc,
   getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { renderCertificateCanvas } from "./certificate-renderer.js";
 
-const nameField = document.getElementById("certificateName");
-const metaField = document.getElementById("certificateMeta");
-const regField = document.getElementById("certificateReg");
-const rankField = document.getElementById("certificateRank");
-const qrImage = document.getElementById("certificateQr");
-const titleField = document.getElementById("certificateTitle");
-const statementField = document.getElementById("certificateStatement");
+const canvasEl = document.getElementById("certificateCanvas");
 const message = document.getElementById("certificateMessage");
 const downloadButton = document.getElementById("downloadCertificate");
+let lastCanvas = null;
 
 function showMessage(text, isError = false) {
   if (!message) return;
@@ -37,34 +33,31 @@ async function loadCertificate(certId) {
     showMessage("Your certificate is not available yet. Please check after admin updates.", true);
     return;
   }
+  try {
+    const rendered = await renderCertificateCanvas(
+      {
+        name: data.name || "",
+        eventName: data.eventName || "",
+        certificateStatus: status,
+        rank: data.rank || "",
+        regNumber: data.regNumber || "",
+      },
+      { certId }
+    );
 
-  if (nameField) nameField.textContent = data.name || "";
-  if (metaField) {
-    metaField.textContent = data.category || data.eventName || "Event";
-  }
-  if (regField) regField.textContent = `Registration No: ${data.regNumber || "-"}`;
-
-  if (status === "ranked") {
-    if (titleField) titleField.textContent = "Certificate of Merit";
-    if (statementField) {
-      statementField.textContent = "This is to certify that the above participant has achieved a ranked position in the event.";
+    lastCanvas = rendered;
+    if (canvasEl) {
+      canvasEl.width = rendered.width;
+      canvasEl.height = rendered.height;
+      const ctx = canvasEl.getContext("2d");
+      ctx?.drawImage(rendered, 0, 0);
     }
-    if (rankField) rankField.textContent = data.rank ? `Ranked: #${data.rank}` : "Ranked finisher";
-  } else {
-    if (titleField) titleField.textContent = "Certificate of Participation";
-    if (statementField) {
-      statementField.textContent = "This is to certify that the above participant has successfully completed the event.";
-    }
-    if (rankField) rankField.textContent = "";
-  }
 
-  if (qrImage) {
-    const baseUrl = window.location.origin;
-    const verifyUrl = `${baseUrl}/verify.html?cert=${encodeURIComponent(certId)}`;
-    qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(verifyUrl)}`;
+    showMessage("Certificate ready. Click download below.");
+  } catch (error) {
+    console.error(error);
+    showMessage("Template not found or not configured. Add your PNGs in assets/certificates and update certificate-template-config.js.", true);
   }
-
-  showMessage("Certificate ready. Click download below.");
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -81,6 +74,29 @@ if (certId) {
 
 if (downloadButton) {
   downloadButton.addEventListener("click", () => {
-    window.print();
+    if (!lastCanvas) {
+      showMessage("Certificate not ready yet.", true);
+      return;
+    }
+
+    try {
+      const safeName = String((new URLSearchParams(window.location.search)).get("cert") || "certificate")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "certificate";
+
+      const url = lastCanvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeName}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error(error);
+      showMessage("Unable to download. Try a different browser.", true);
+    }
   });
 }

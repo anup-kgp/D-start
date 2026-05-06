@@ -40,40 +40,7 @@
         <div class="container">
           <div class="certificate-preview" id="certificatePreview">
             <div class="certificate-shell" id="certificateShell">
-              <div class="certificate-header">
-                <div class="certificate-logo">
-                  <img src="./assets/logo.png" alt="D Star Athletic Club logo" />
-                </div>
-                <div class="certificate-headline">
-                  <span>Kharagpur D Star Athletic Club (KDSAC)</span>
-                  <strong>Kharagpur Mini Marathon 2026</strong>
-                  <small>Fit India Registered Youth Club</small>
-                </div>
-              </div>
-              <div class="certificate-body">
-                <h3 id="certificateTitle">Certificate</h3>
-                <p class="certificate-name" id="certificateName">Participant Name</p>
-                <p class="certificate-statement" id="certificateStatement">
-                  This is to certify that the above participant has successfully completed the event.
-                </p>
-                <p class="certificate-meta" id="certificateMeta">Event details</p>
-                <p class="certificate-reg" id="certificateReg">Registration No: 0000</p>
-                <p class="certificate-rank" id="certificateRank"></p>
-              </div>
-              <div class="certificate-footer">
-                <div>
-                  <small>Date & Venue</small>
-                  <strong>10 May 2026 • Kharagpur Sersa Stadium</strong>
-                </div>
-                <div>
-                  <small>Authorized by</small>
-                  <strong>Digitally Issued by KDSAC</strong>
-                </div>
-              </div>
-              <div class="certificate-qr">
-                <img id="certificateQr" alt="Certificate QR code" />
-                <span>Scan to verify</span>
-              </div>
+              <canvas id="certificateCanvas" style="width: 100%; height: auto; display: block; border-radius: 18px;"></canvas>
             </div>
             <button class="button button-secondary button-full" id="downloadCertificate" type="button">
               Download Certificate
