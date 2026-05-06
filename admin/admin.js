@@ -6,6 +6,7 @@ import {
   orderBy,
   query,
   updateDoc,
+  deleteDoc,
   doc,
   getDoc,
   setDoc,
@@ -900,6 +901,46 @@ function renderTable(list) {
     });
 
     actionCell.appendChild(saveButton);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "button button-secondary button-small";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+
+    deleteButton.addEventListener("click", async () => {
+      const regNo = reg.regNumber || "-";
+      const ok = window.confirm(`Delete registration ${regNo} (${reg.name || "Unnamed"})?\n\nThis cannot be undone.`);
+      if (!ok) return;
+
+      deleteButton.disabled = true;
+      const oldText = deleteButton.textContent;
+      deleteButton.textContent = "Deleting...";
+      try {
+        await deleteDoc(doc(db, "registrations", reg.id));
+
+        // Delete linked certificate record (if present)
+        try {
+          const certId = await hashCertificateId(reg.nameLower || normalizeValue(reg.name), reg.dob || "");
+          await deleteDoc(doc(db, "certificates", certId));
+        } catch (certError) {
+          console.error("Certificate delete failed", certError);
+        }
+
+        // Update local state + UI
+        registrations = registrations.filter((item) => item.id !== reg.id);
+        selectedIds.delete(reg.id);
+        updateStats();
+        applyFilters();
+      } catch (error) {
+        console.error(error);
+        window.alert("Failed to delete. Please try again.");
+      } finally {
+        deleteButton.disabled = false;
+        deleteButton.textContent = oldText;
+      }
+    });
+
+    actionCell.appendChild(deleteButton);
 
     selectCell.dataset.label = "Select";
     regCell.dataset.label = "Reg No";
