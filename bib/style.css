@@ -1,0 +1,85 @@
+body {
+    font-family: Arial;
+    background: #eee;
+    text-align: center;
+    padding: 40px;
+  }
+  
+  button {
+    padding: 15px 25px;
+    font-size: 18px;
+    background: #f1645a;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+  }
+  
+  /* hidden rendering area */
+  #hidden-container {
+    position: absolute;
+    left: -9999px;
+  }
+  
+  /* ticket design */
+  .ticket {
+    width: 500px;
+    height: 250px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* top header */
+  .top {
+    background: #f1645a;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-weight: bold;
+    font-size: 18px;
+  }
+  
+  /* keep number centered, place logo on the left */
+  .bib-row {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    transform: translateY(-50%);
+    height: 110px;
+  }
+
+  .bib-logo {
+    position: absolute;
+    left: 44px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+  }
+
+  .number {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 100px;
+    font-weight: bold;
+    color: #f1645a;
+    line-height: 1;
+  }
+  
+  /* bottom section */
+  .bottom {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: #f1645a;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 18px;
+  }

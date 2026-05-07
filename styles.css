@@ -1393,6 +1393,9 @@ a {
   top: 96px;
   display: grid;
   gap: 1rem;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+  padding-bottom: 0.25rem;
 }
 
 .admin-sidebar-card {
@@ -1473,6 +1476,16 @@ a {
   transform: translateY(-2px);
   border-color: rgba(242, 201, 76, 0.28);
   background: rgba(255, 255, 255, 0.07);
+}
+
+.admin-side-form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.admin-side-form .input-field {
+  min-width: 0;
+  width: 100%;
 }
 
 .admin-page .section-heading h2 {
@@ -1809,6 +1822,9 @@ textarea.input-field {
 
   .admin-sidebar {
     position: static;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .admin-topbar {

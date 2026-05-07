@@ -3,8 +3,10 @@ import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
 import {
   collection,
   getDocs,
+  limit,
   orderBy,
   query,
+  where,
   updateDoc,
   deleteDoc,
   doc,
@@ -73,6 +75,14 @@ const whatsappGroupLink = document.getElementById("whatsappGroupLink");
 const sendMaleInviteButton = document.getElementById("sendMaleInviteButton");
 const sendFemaleInviteButton = document.getElementById("sendFemaleInviteButton");
 const whatsappMailerMessage = document.getElementById("whatsappMailerMessage");
+const manualCardRegNo = document.getElementById("manualCardRegNo");
+const manualCardUploadPhoto = document.getElementById("manualCardUploadPhoto");
+const manualCardGenerate = document.getElementById("manualCardGenerate");
+const manualCardMessage = document.getElementById("manualCardMessage");
+const bibRegNo = document.getElementById("bibRegNo");
+const bibGenerateOne = document.getElementById("bibGenerateOne");
+const bibGenerateAll = document.getElementById("bibGenerateAll");
+const bibMessage = document.getElementById("bibMessage");
 
 let registrations = [];
 let selectedIds = new Set();
@@ -80,6 +90,8 @@ let currentUser = null;
 let isAdminUser = false;
 let directAccessKey = "";
 let lastCardCanvas = null;
+let manualCardPhotoFile = null;
+let bibLogoImgPromise = null;
 
 const EMAILJS_SERVICE_ID = "service_oelo1t3";
 const EMAILJS_RANKED_TEMPLATE_ID = "template_hkgh7an";
@@ -569,6 +581,198 @@ function setWhatsappMailerMessage(text, isError = false) {
   whatsappMailerMessage.classList.toggle("is-error", isError);
 }
 
+function setManualCardMessage(text, isError = false) {
+  if (!manualCardMessage) return;
+  manualCardMessage.textContent = text || "";
+  manualCardMessage.classList.toggle("is-error", isError);
+}
+
+function setBibMessage(text, isError = false) {
+  if (!bibMessage) return;
+  bibMessage.textContent = text || "";
+  bibMessage.classList.toggle("is-error", isError);
+}
+
+function loadBibLogo() {
+  if (!bibLogoImgPromise) {
+    bibLogoImgPromise = loadImage("../bib/image.png");
+  }
+  return bibLogoImgPromise;
+}
+
+async function renderBibCanvas(numberText) {
+  const num = String(numberText || "").trim();
+  if (!num) throw new Error("Missing bib number");
+
+  const width = 1000;
+  const height = 500;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+
+  const primary = "#f1645a";
+
+  // card
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  // top bar
+  ctx.fillStyle = primary;
+  ctx.fillRect(0, 0, width, 90);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 36px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("KHARAGPUR MINI MARATHON 2026", width / 2, 45);
+
+  // bottom bar
+  ctx.fillStyle = primary;
+  ctx.fillRect(0, height - 95, width, 95);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 28px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("D Star Athletic Club Kharagpur", width / 2, height - 62);
+  ctx.font = "700 24px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("Date: 10-05-2026 | kdsac.in", width / 2, height - 30);
+
+  // logo
+  try {
+    const logo = await loadBibLogo();
+    ctx.drawImage(logo, 90, 175, 150, 150);
+  } catch {
+    // ignore
+  }
+
+  // bib number
+  ctx.fillStyle = primary;
+  ctx.font = "900 170px Manrope, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText(num, width / 2 + 60, height / 2 + 10);
+
+  return canvas;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function generateBibSingle() {
+  const regNo = String(bibRegNo?.value || "").trim();
+  if (!regNo) {
+    setBibMessage("Enter a registration number.", true);
+    return;
+  }
+  const canvas = await renderBibCanvas(regNo);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("PNG export failed");
+  downloadBlob(blob, `bib_${regNo}.png`);
+  setBibMessage("Bib downloaded.", false);
+}
+
+async function generateBibAll() {
+  setBibMessage("Loading participants...", false);
+  const regsSnap = await getDocs(query(collection(db, "registrations"), orderBy("createdAt", "asc")));
+  const list = regsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const regNos = list
+    .map((r) => String(r.regNumber || "").trim())
+    .filter(Boolean);
+
+  if (!regNos.length) {
+    setBibMessage("No registrations found.", true);
+    return;
+  }
+
+  const { default: JSZip } = await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm");
+  const zip = new JSZip();
+
+  const total = regNos.length;
+  const start = Date.now();
+  for (let i = 0; i < total; i++) {
+    const n = regNos[i];
+    const remaining = total - i - 1;
+    setBibMessage(`Generating ${i + 1}/${total} (remaining ${remaining})...`, false);
+
+    const canvas = await renderBibCanvas(n);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (blob) zip.file(`bib_${n}.png`, blob);
+  }
+
+  setBibMessage("Preparing ZIP...", false);
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  const seconds = Math.max(1, Math.round((Date.now() - start) / 1000));
+  downloadBlob(zipBlob, `KDSAC_Bibs_${total}_in_${seconds}s.zip`);
+  setBibMessage(`Done. Downloaded ${total} bibs.`, false);
+}
+async function fetchRegistrationByRegNo(regNo) {
+  const value = String(regNo || "").trim();
+  if (!value) return null;
+  const q = query(collection(db, "registrations"), where("regNumber", "==", value), limit(1));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, ...d.data() };
+}
+
+async function ensurePhotoForReg(reg) {
+  if (!manualCardPhotoFile) return reg;
+  setManualCardMessage("Uploading photo...", false);
+  const url = await uploadFileToCloudinary(manualCardPhotoFile);
+  if (!url) throw new Error("Photo upload failed");
+  await updateDoc(doc(db, "registrations", reg.id), { photoUrl: url });
+  // also update local cache if loaded already
+  const idx = registrations.findIndex((r) => r.id === reg.id);
+  if (idx >= 0) registrations[idx].photoUrl = url;
+  return { ...reg, photoUrl: url };
+}
+
+async function generateManualCard() {
+  const regNo = String(manualCardRegNo?.value || "").trim();
+  if (!regNo) {
+    setManualCardMessage("Enter a registration number first.", true);
+    return;
+  }
+  setManualCardMessage("Fetching participant...", false);
+  const reg = await fetchRegistrationByRegNo(regNo);
+  if (!reg) {
+    setManualCardMessage("No registration found for that registration number.", true);
+    return;
+  }
+
+  let finalReg = reg;
+  if (manualCardPhotoFile) {
+    finalReg = await ensurePhotoForReg(reg);
+  }
+
+  if (!finalReg.photoUrl) {
+    setManualCardMessage("No photo found. Click “Upload / Replace Photo” then generate again.", true);
+    return;
+  }
+
+  setManualCardMessage("Generating ID card...", false);
+  const EVENT_DATE = "10 May 2026";
+  const VENUE = "Kharagpur Sersa Stadium";
+  const qrText = [
+    "KDSAC Participant Card",
+    `Name: ${finalReg.name || "-"}`,
+    `Event: ${finalReg.eventName || "-"}`,
+    `Reg No: ${finalReg.regNumber || "-"}`,
+    `Date: ${EVENT_DATE}`,
+    `Venue: ${VENUE}`,
+  ].join("\n");
+
+  const canvas = await buildParticipantCardCanvas(finalReg, { qrText });
+  openCardModalWithCanvas(canvas, finalReg);
+  manualCardPhotoFile = null;
+  setManualCardMessage("ID card ready. Download from the preview.", false);
+}
+
 function showWhatsAppMailerComingSoon() {
   const setupFile = WHATSAPP_INVITE_EMAILJS_SETUP?.setupFile || "emailjs-whatsapp-invite.setup.js";
   setWhatsappMailerMessage(`Coming soon. The future EmailJS setup is saved in ${setupFile}.`, false);
@@ -861,6 +1065,8 @@ function renderTable(list) {
           nameLower: reg.nameLower || normalizeValue(reg.name),
           eventName: reg.eventName || "",
           category: categoryLabel(reg.eventName, reg.gender),
+          gender: reg.gender || "",
+          dob: reg.dob || "",
           regNumber: reg.regNumber || "",
           certificateStatus: newStatus,
           rank: rankValue,
@@ -1227,6 +1433,8 @@ if (applyBulk) {
           nameLower: reg.nameLower || normalizeValue(reg.name),
           eventName: reg.eventName || "",
           category: categoryLabel(reg.eventName, reg.gender),
+          gender: reg.gender || "",
+          dob: reg.dob || "",
           regNumber: reg.regNumber || "",
           certificateStatus: newStatus,
           rank: rankValue,
@@ -1314,6 +1522,76 @@ if (logoutButton) {
   });
 }
 
+if (manualCardUploadPhoto) {
+  manualCardUploadPhoto.addEventListener("click", async () => {
+    try {
+      const file = await pickFile({ accept: "image/*" });
+      if (!file) return;
+      manualCardPhotoFile = file;
+      setManualCardMessage(`Photo selected: ${file.name}`, false);
+    } catch (error) {
+      console.error(error);
+      setManualCardMessage("Could not select photo.", true);
+    }
+  });
+}
+
+if (manualCardGenerate) {
+  manualCardGenerate.addEventListener("click", async () => {
+    if (!isAdminUser) return;
+    manualCardGenerate.disabled = true;
+    const oldText = manualCardGenerate.textContent;
+    manualCardGenerate.textContent = "Generating...";
+    try {
+      await generateManualCard();
+    } catch (error) {
+      console.error(error);
+      setManualCardMessage("Could not generate card. Please try again.", true);
+    } finally {
+      manualCardGenerate.disabled = false;
+      manualCardGenerate.textContent = oldText;
+    }
+  });
+}
+
+if (bibGenerateOne) {
+  bibGenerateOne.addEventListener("click", async () => {
+    if (!isAdminUser) return;
+    bibGenerateOne.disabled = true;
+    const oldText = bibGenerateOne.textContent;
+    bibGenerateOne.textContent = "Generating...";
+    try {
+      await generateBibSingle();
+    } catch (error) {
+      console.error(error);
+      setBibMessage("Could not generate bib. Try again.", true);
+    } finally {
+      bibGenerateOne.disabled = false;
+      bibGenerateOne.textContent = oldText;
+    }
+  });
+}
+
+if (bibGenerateAll) {
+  bibGenerateAll.addEventListener("click", async () => {
+    if (!isAdminUser) return;
+    const ok = window.confirm("Generate bibs for ALL registrations and download a ZIP?");
+    if (!ok) return;
+    bibGenerateAll.disabled = true;
+    const oldText = bibGenerateAll.textContent;
+    bibGenerateAll.textContent = "Generating...";
+    try {
+      await generateBibAll();
+    } catch (error) {
+      console.error(error);
+      setBibMessage("Could not generate all bibs. Try again.", true);
+    } finally {
+      bibGenerateAll.disabled = false;
+      bibGenerateAll.textContent = oldText;
+    }
+  });
+}
+
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (!user) {
@@ -1346,6 +1624,7 @@ onAuthStateChanged(auth, async (user) => {
     }
     showLoginMessage("", false);
     loadRegistrations();
+    setManualCardMessage("Enter a registration number to generate an ID card.", false);
   } else {
     if (adminContent) {
       adminContent.hidden = true;

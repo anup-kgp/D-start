@@ -14,6 +14,13 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
+function getPublicBaseUrl() {
+  const host = window.location.hostname;
+  return host && host !== "localhost" && host !== "127.0.0.1"
+    ? window.location.origin
+    : "https://kdsac.in";
+}
+
 function fitTextToWidth(ctx, text, maxWidth, startSizePx, minSizePx) {
   let size = startSizePx;
   while (size > minSizePx) {
@@ -101,10 +108,9 @@ export async function renderCertificateCanvas(certData, { certId } = {}) {
     });
   }
 
-  // Optional QR (only if template.qr is configured)
+  // QR → opens verify.html?cert={id} (unique per participant certificate doc)
   if (template.qr && certId) {
-    const baseUrl = window.location.origin;
-    const verifyUrl = `${baseUrl}/verify.html?cert=${encodeURIComponent(certId)}`;
+    const verifyUrl = `${getPublicBaseUrl()}/verify.html?cert=${encodeURIComponent(certId)}`;
     const qrSize = Math.round((template.qr.sizePct / 100) * width);
     const x = (template.qr.xPct / 100) * width;
     const y = (template.qr.yPct / 100) * height;
@@ -116,6 +122,27 @@ export async function renderCertificateCanvas(certData, { certId } = {}) {
       color: { dark: "#0b1220", light: "#ffffff" },
     });
     const qrImg = await loadImage(dataUrl);
+
+    const pad = Math.max(8, Math.round(qrSize * 0.06));
+    const boxW = qrSize + pad * 2;
+    const boxH = qrSize + pad * 2;
+    const boxX = x - boxW / 2;
+    const boxY = y - boxH / 2;
+    const r = Math.min(18, Math.round(pad * 0.9));
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "rgba(11, 42, 79, 0.12)";
+    ctx.lineWidth = Math.max(1, Math.round(width / 900));
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(boxX, boxY, boxW, boxH, r);
+    } else {
+      ctx.rect(boxX, boxY, boxW, boxH);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
     ctx.drawImage(qrImg, x - qrSize / 2, y - qrSize / 2, qrSize, qrSize);
   }
 

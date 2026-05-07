@@ -38,48 +38,24 @@
           <div class="certificate-copy">
             <p class="eyebrow">Certificate Verification</p>
             <h2>Verify a participant certificate.</h2>
-            <p>Enter the registration number to verify the certificate status.</p>
+            <p>This page is opened automatically by scanning the QR code on the certificate.</p>
           </div>
           <div class="certificate-card">
-            <form class="certificate-form" id="verifyForm">
-              <label>
-                Registration Number
-                <input type="text" name="regNumber" placeholder="e.g. 0007" required />
-              </label>
-              <button class="button button-primary button-full" type="submit">Verify</button>
-              <p class="form-note" id="verifyMessage">You can also open this page by scanning the certificate QR code.</p>
-            </form>
             <div class="certificate-preview" id="verifyResult" hidden>
-              <div class="certificate-shell">
-                <div class="certificate-header">
-                  <div class="certificate-logo">
-                    <img src="./assets/logo.png" alt="D Star Athletic Club logo" />
-                  </div>
-                  <div class="certificate-headline">
-                    <span>Kharagpur D Star Athletic Club (KDSAC)</span>
-                    <strong>Kharagpur Mini Marathon 2026</strong>
-                    <small>Fit India Registered Youth Club</small>
-                  </div>
-                </div>
-                <div class="certificate-body">
-                  <h3 id="verifyTitle">Certificate Status</h3>
-                  <p class="certificate-name" id="verifyName">Participant Name</p>
-                  <p class="certificate-meta" id="verifyMeta">Event details</p>
-                  <p class="certificate-reg" id="verifyReg">Registration No: 0000</p>
-                  <p class="certificate-rank" id="verifyRank"></p>
-                </div>
-                <div class="certificate-footer">
-                  <div>
-                    <small>Date & Venue</small>
-                    <strong>10 May 2026 • Kharagpur Sersa Stadium</strong>
-                  </div>
-                  <div>
-                    <small>Status</small>
-                    <strong id="verifyStatus">Pending</strong>
-                  </div>
-                </div>
+              <div class="success-card" style="margin-top: 0;">
+                <span class="success-badge">Verified</span>
+                <h4 style="margin: 0.8rem 0 0.35rem;">Certificate verified successfully</h4>
+                <p style="margin: 0;">Tap/click the certificate below to download it again.</p>
               </div>
+
+              <div class="certificate-shell" style="margin-top: 1rem;">
+                <canvas id="verifyCanvas" style="width: 100%; height: auto; display: block; border-radius: 18px; cursor: pointer;"></canvas>
+              </div>
+
+              <p class="form-note" id="verifyMessage" style="margin-top: 0.75rem;"></p>
             </div>
+
+            <p class="form-note" id="verifyMessageIdle">Scan the QR code on the certificate to open this page.</p>
           </div>
         </div>
       </section>

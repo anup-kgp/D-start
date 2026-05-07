@@ -3,16 +3,13 @@ import {
   doc,
   getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { renderCertificateCanvas } from "./certificate-renderer.js";
 
-const form = document.getElementById("verifyForm");
 const message = document.getElementById("verifyMessage");
+const idleMessage = document.getElementById("verifyMessageIdle");
 const result = document.getElementById("verifyResult");
-const nameField = document.getElementById("verifyName");
-const metaField = document.getElementById("verifyMeta");
-const regField = document.getElementById("verifyReg");
-const rankField = document.getElementById("verifyRank");
-const statusField = document.getElementById("verifyStatus");
-const titleField = document.getElementById("verifyTitle");
+const canvasEl = document.getElementById("verifyCanvas");
+let lastCanvas = null;
 
 function showMessage(text, isError = false) {
   if (!message) return;
@@ -22,7 +19,7 @@ function showMessage(text, isError = false) {
 
 function resetResult() {
   if (result) result.hidden = true;
-  if (rankField) rankField.textContent = "";
+  lastCanvas = null;
 }
 
 async function fetchByCert(certId) {
@@ -31,56 +28,76 @@ async function fetchByCert(certId) {
   return snap.exists() ? snap.data() : null;
 }
 
+function downloadCanvasPng(canvas, filenameBase = "certificate") {
+  const url = canvas.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filenameBase}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 async function handleVerify(certId) {
   resetResult();
   showMessage("Verifying...", false);
 
   const data = await fetchByCert(certId);
   if (!data) {
-    showMessage("No certificate found for this registration number.", true);
+    showMessage("No certificate found.", true);
     return;
   }
 
   const status = data.certificateStatus || "pending";
-  if (nameField) nameField.textContent = data.name || "-";
-  if (metaField) metaField.textContent = `${data.eventName || "Event"} • ${data.gender || ""} • DOB ${data.dob || ""}`;
-  if (regField) regField.textContent = `Registration No: ${data.regNumber || ""}`;
-
-  if (status === "ranked") {
-    if (titleField) titleField.textContent = "Ranked Certificate";
-    if (rankField) rankField.textContent = data.rank ? `Rank: #${data.rank}` : "Ranked finisher";
-  } else if (status === "participant") {
-    if (titleField) titleField.textContent = "Participant Certificate";
-    if (rankField) rankField.textContent = "";
-  } else {
-    if (titleField) titleField.textContent = "Certificate Pending";
-    if (rankField) rankField.textContent = "";
+  if (status === "pending") {
+    showMessage("Certificate is not issued yet (Pending).", true);
+    return;
   }
 
-  if (statusField) {
-    statusField.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+  try {
+    const rendered = await renderCertificateCanvas(
+      {
+        name: data.name || "",
+        eventName: data.eventName || "",
+        certificateStatus: status,
+        rank: data.rank || "",
+        regNumber: data.regNumber || "",
+      },
+      { certId }
+    );
+
+    lastCanvas = rendered;
+    if (canvasEl) {
+      canvasEl.width = rendered.width;
+      canvasEl.height = rendered.height;
+      const ctx = canvasEl.getContext("2d");
+      ctx?.drawImage(rendered, 0, 0);
+
+      const safeBase = String(data.regNumber || certId || "certificate")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "certificate";
+
+      canvasEl.onclick = () => {
+        if (!lastCanvas) return;
+        try {
+          downloadCanvasPng(lastCanvas, safeBase);
+        } catch (error) {
+          console.error(error);
+          showMessage("Unable to download. Try a different browser.", true);
+        }
+      };
+    }
+
+    if (result) result.hidden = false;
+    if (idleMessage) idleMessage.hidden = true;
+    showMessage("Certificate verified. Preview loaded.");
+  } catch (error) {
+    console.error(error);
+    showMessage("Verified, but preview could not be generated (template/config missing).", true);
   }
-
-  if (result) result.hidden = false;
-  showMessage("Certificate status loaded.");
-}
-
-if (form) {
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const formData = new FormData(form);
-    const regNumber = String(formData.get("regNumber") || "").trim();
-    if (!regNumber) {
-      showMessage("Enter a registration number.", true);
-      return;
-    }
-    try {
-      showMessage("Use the QR code from the certificate for verification.", true);
-    } catch (error) {
-      console.error(error);
-      showMessage("Unable to verify right now. Please try again.", true);
-    }
-  });
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -89,4 +106,7 @@ if (certParam) {
   handleVerify(certParam).catch((error) => {
     console.error(error);
   });
+} else {
+  if (idleMessage) idleMessage.hidden = false;
+  showMessage("", false);
 }

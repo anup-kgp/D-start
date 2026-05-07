@@ -18,3 +18,7 @@ Expected filenames (you can rename, just update `certificate-template-config.js`
 
 Then adjust text positions (xPct/yPct) once in `certificate-template-config.js`.
 
+A verification QR code is drawn on every certificate (see `QR_SLOT` in that file).
+It links to: `https://YOUR-DOMAIN/verify.html?cert=<certificateId>`.
+Adjust `QR_SLOT` if the QR should sit in a different corner on your artwork.
+
