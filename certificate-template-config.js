@@ -46,7 +46,7 @@ export const CERT_TEMPLATES = {
     finisher: {
       file: "./assets/certificates/women-5km-finisher.png",
       // Women finisher: name a bit smaller + slightly lower.
-      name: { ...WOMEN_NAME_SLOT, yPct: 45.7 },
+      name: { ...WOMEN_NAME_SLOT, yPct: 45.0 },
       reg: REG_SLOT,
       qr: QR_SLOT,
     },
