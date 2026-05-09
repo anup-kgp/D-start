@@ -1685,6 +1685,9 @@ textarea.input-field {
 
 .table-wrap {
   overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(6, 12, 20, 0.7);
@@ -1701,10 +1704,40 @@ textarea.input-field {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.admin-table tbody tr.admin-row-present {
+  background: rgba(1, 196, 167, 0.14);
+  box-shadow: inset 3px 0 0 0 var(--teal);
+}
+
+.admin-table tbody tr.admin-row-present:hover {
+  background: rgba(1, 196, 167, 0.2);
+}
+
+.admin-table tbody tr.admin-row-absent {
+  background: rgba(220, 82, 96, 0.12);
+  box-shadow: inset 3px 0 0 0 rgba(255, 99, 115, 0.85);
+}
+
+.admin-table tbody tr.admin-row-absent:hover {
+  background: rgba(220, 82, 96, 0.18);
+}
+
+/* If both ever applied, prefer neutral read — absent overrides present in JS */
+.admin-present-btn {
+  white-space: nowrap;
+}
+
+.admin-present-btn--active {
+  border-color: rgba(1, 196, 167, 0.55);
+  background: rgba(1, 196, 167, 0.22);
+  color: #e6fff8;
+}
+
 .admin-table {
   width: 100%;
+  min-width: 1200px;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .admin-table th,
@@ -1718,6 +1751,32 @@ textarea.input-field {
   vertical-align: top;
 }
 
+/* Keep control columns from squashing when the table scrolls horizontally */
+.admin-table th:nth-child(1),
+.admin-table td:nth-child(1) {
+  width: 3rem;
+  min-width: 3rem;
+}
+
+.admin-table th:nth-child(2),
+.admin-table td:nth-child(2) {
+  min-width: 4.25rem;
+}
+
+.admin-table th:nth-child(3),
+.admin-table td:nth-child(3) {
+  min-width: 8rem;
+}
+
+.admin-table th:nth-child(7),
+.admin-table td:nth-child(7) {
+  min-width: 9.5rem;
+}
+
+.admin-table .file-links {
+  min-width: 8.5rem;
+}
+
 .admin-table td input,
 .admin-table td select,
 .admin-table td button {
@@ -1729,6 +1788,24 @@ textarea.input-field {
 .action-cell {
   display: grid;
   gap: 0.4rem;
+}
+
+.admin-table .status-cell {
+  min-width: 9.5rem;
+}
+
+.admin-table .rank-cell {
+  min-width: 5rem;
+}
+
+.admin-table .present-cell {
+  min-width: 7.5rem;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.admin-table .action-cell {
+  min-width: 6.5rem;
 }
 
 .action-cell .button {
@@ -1853,6 +1930,11 @@ textarea.input-field {
 
   .admin-table thead {
     display: none;
+  }
+
+  /* Card layout: drop desktop min-width so the stack fits the screen */
+  .table-wrap .admin-table {
+    min-width: 0;
   }
 
   .admin-table,
@@ -2167,6 +2249,44 @@ textarea.input-field {
 .card-details-item strong {
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.92);
+}
+
+#adminDetailsModal.admin-details-present .card-details-card {
+  border-color: rgba(1, 196, 167, 0.45);
+  box-shadow: 0 0 0 1px rgba(1, 196, 167, 0.25), var(--shadow);
+  background: rgba(1, 196, 167, 0.08);
+}
+
+#adminDetailsModal.admin-details-present .card-details-item {
+  border-color: rgba(1, 196, 167, 0.35);
+  background: rgba(1, 196, 167, 0.12);
+}
+
+#adminDetailsModal.admin-details-present .card-details-body h3 {
+  color: #7fe8d4;
+}
+
+#adminDetailsModal.admin-details-present .card-details-item strong {
+  color: #e6fff8;
+}
+
+#adminDetailsModal.admin-details-absent .card-details-card {
+  border-color: rgba(255, 99, 115, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 99, 115, 0.22), var(--shadow);
+  background: rgba(255, 99, 115, 0.09);
+}
+
+#adminDetailsModal.admin-details-absent .card-details-item {
+  border-color: rgba(255, 99, 115, 0.35);
+  background: rgba(255, 99, 115, 0.12);
+}
+
+#adminDetailsModal.admin-details-absent .card-details-body h3 {
+  color: #ffb3bc;
+}
+
+#adminDetailsModal.admin-details-absent .card-details-item strong {
+  color: #fff5f6;
 }
 
 @media (max-width: 900px) {
@@ -2615,4 +2735,297 @@ textarea.input-field {
   .certificate-qr {
     margin-top: 0.8rem;
   }
+}
+
+/* --- Mobile attendance check-in page --- */
+.attendance-mark-page .attendance-section {
+  padding-top: 0.75rem;
+  padding-bottom: 2rem;
+}
+
+.attendance-app {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.attendance-user-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+}
+
+.attendance-user-bar .muted {
+  color: var(--muted);
+}
+
+.attendance-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+@media (min-width: 420px) {
+  .attendance-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.attendance-stat-card {
+  border-radius: 16px;
+  padding: 0.85rem 0.75rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 14, 24, 0.65);
+}
+
+.attendance-stat-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.attendance-stat-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.attendance-stat-total .attendance-stat-value {
+  color: var(--text);
+}
+
+.attendance-stat-present .attendance-stat-value {
+  color: #7fe8d4;
+}
+
+.attendance-stat-absent .attendance-stat-value {
+  color: #ff8a96;
+}
+
+.attendance-stat-unmarked .attendance-stat-value {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.attendance-search-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+.attendance-search-input {
+  width: 100%;
+  font-size: 1.05rem;
+  padding: 0.95rem 1rem;
+  min-height: 52px;
+}
+
+.attendance-hint {
+  margin: 0.25rem 0 0;
+}
+
+.attendance-matches {
+  display: grid;
+  gap: 0.45rem;
+  max-height: min(45vh, 320px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.15rem;
+}
+
+.attendance-empty {
+  margin: 0;
+  padding: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.attendance-match-row {
+  width: 100%;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 20, 32, 0.75);
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  display: grid;
+  gap: 0.2rem;
+  min-height: 52px;
+}
+
+.attendance-match-row:hover,
+.attendance-match-row:focus-visible {
+  border-color: rgba(15, 91, 214, 0.5);
+  background: rgba(15, 91, 214, 0.12);
+}
+
+.attendance-match-row.is-selected {
+  border-color: rgba(242, 201, 76, 0.55);
+  box-shadow: 0 0 0 2px rgba(242, 201, 76, 0.15);
+}
+
+.attendance-match-name {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.attendance-match-meta {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.attendance-match-meta.is-present-line {
+  color: #7fe8d4;
+}
+
+.attendance-match-meta.is-absent-line {
+  color: #ff8a96;
+}
+
+.attendance-detail-panel {
+  margin-top: 0.25rem;
+}
+
+.attendance-detail-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 12, 22, 0.55);
+  padding: 1.1rem 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.attendance-detail-card--present {
+  border-color: rgba(1, 196, 167, 0.45);
+  background: rgba(1, 196, 167, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(1, 196, 167, 0.18);
+}
+
+.attendance-detail-card--absent {
+  border-color: rgba(255, 99, 115, 0.42);
+  background: rgba(255, 99, 115, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 99, 115, 0.15);
+}
+
+.attendance-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.attendance-detail-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.attendance-status-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.attendance-status-badge--present {
+  color: #bff7ea;
+  border-color: rgba(1, 196, 167, 0.45);
+  background: rgba(1, 196, 167, 0.2);
+}
+
+.attendance-status-badge--absent {
+  color: #ffd0d5;
+  border-color: rgba(255, 99, 115, 0.45);
+  background: rgba(255, 99, 115, 0.22);
+}
+
+.attendance-status-badge--unmarked {
+  color: var(--muted);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.attendance-detail-dl {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.attendance-detail-dl div {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.95rem;
+}
+
+.attendance-detail-dl dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.attendance-detail-dl dd {
+  margin: 0;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.attendance-actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.attendance-btn-present {
+  min-height: 54px;
+  border-radius: 14px;
+  border: 2px solid rgba(1, 196, 167, 0.55);
+  background: linear-gradient(180deg, rgba(1, 196, 167, 0.35), rgba(1, 196, 167, 0.18));
+  color: #eafffb;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.attendance-btn-present:active {
+  transform: scale(0.99);
+}
+
+.attendance-btn-absent {
+  min-height: 54px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 99, 115, 0.55);
+  background: linear-gradient(180deg, rgba(255, 99, 115, 0.32), rgba(255, 99, 115, 0.14));
+  color: #fff5f6;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.attendance-btn-absent:active {
+  transform: scale(0.99);
+}
+
+.attendance-footer-msg {
+  min-height: 1.25rem;
 }

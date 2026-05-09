@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+    <title>Attendance | KDSAC Admin</title>
+    <meta name="description" content="Mark event attendance for Kharagpur Mini Marathon registrations." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body class="admin-page attendance-mark-page">
+    <header class="site-header admin-header">
+      <div class="container nav">
+        <div class="brand">
+          <img class="brand-logo" src="../assets/logo.png" alt="D Star Athletic Club logo" />
+          <span class="brand-text">
+            <strong>Attendance</strong>
+            <small>KDSAC — mobile check-in</small>
+          </span>
+        </div>
+        <div class="admin-links">
+          <a class="button button-secondary button-small" href="index.html">Admin dashboard</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section admin-section attendance-section">
+        <div class="container">
+          <div class="admin-login" id="adminLogin">
+            <div class="admin-login-card">
+              <h2>Admin Login</h2>
+              <p>Sign in with Google to mark attendance.</p>
+              <button class="button button-primary" id="loginButton" type="button">Sign in with Google</button>
+              <p class="form-note" id="loginMessage"></p>
+            </div>
+          </div>
+
+          <div class="attendance-app" id="attendanceApp" hidden>
+            <div class="attendance-user-bar">
+              <span class="muted">Signed in as</span>
+              <strong id="adminEmail">—</strong>
+              <button class="button button-secondary button-small" id="logoutButton" type="button">Sign out</button>
+            </div>
+
+            <div class="attendance-stats" id="attendanceStats" aria-live="polite">
+              <div class="attendance-stat-card attendance-stat-total">
+                <span class="attendance-stat-label">Total</span>
+                <strong class="attendance-stat-value" id="statTotalAtt">0</strong>
+              </div>
+              <div class="attendance-stat-card attendance-stat-present">
+                <span class="attendance-stat-label">Present</span>
+                <strong class="attendance-stat-value" id="statPresentCount">0</strong>
+              </div>
+              <div class="attendance-stat-card attendance-stat-absent">
+                <span class="attendance-stat-label">Absent</span>
+                <strong class="attendance-stat-value" id="statAbsentCount">0</strong>
+              </div>
+              <div class="attendance-stat-card attendance-stat-unmarked">
+                <span class="attendance-stat-label">Not marked</span>
+                <strong class="attendance-stat-value" id="statUnmarkedCount">0</strong>
+              </div>
+            </div>
+
+            <label class="attendance-search-label" for="attendanceSearch">Find participant</label>
+            <input
+              class="input-field attendance-search-input"
+              id="attendanceSearch"
+              type="search"
+              inputmode="search"
+              enterkeyhint="search"
+              autocomplete="off"
+              autocorrect="off"
+              placeholder="Name, reg no, or mobile"
+            />
+
+            <p class="form-note attendance-hint" id="attendanceHint">Type at least 1 character to search.</p>
+
+            <div class="attendance-matches" id="attendanceMatches" hidden></div>
+
+            <div class="attendance-detail-panel" id="attendanceDetail" hidden>
+              <div class="attendance-detail-card" id="attendanceDetailCard">
+                <div class="attendance-detail-head">
+                  <h2 class="attendance-detail-name" id="detailName">—</h2>
+                  <span class="attendance-status-badge" id="detailStatusBadge">—</span>
+                </div>
+                <dl class="attendance-detail-dl">
+                  <div><dt>Reg no</dt><dd id="detailReg">—</dd></div>
+                  <div><dt>Mobile</dt><dd id="detailPhone">—</dd></div>
+                  <div><dt>Event</dt><dd id="detailEvent">—</dd></div>
+                  <div><dt>Gender</dt><dd id="detailGender">—</dd></div>
+                </dl>
+                <div class="attendance-actions">
+                  <button type="button" class="attendance-btn-present" id="btnPresent">Present</button>
+                  <button type="button" class="attendance-btn-absent" id="btnAbsent">Absent</button>
+                  <button type="button" class="attendance-btn-clear button button-secondary button-full" id="btnUnmarked">
+                    Not marked
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <p class="form-note attendance-footer-msg" id="attendanceMessage"></p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./attendance.js"></script>
+  </body>
+</html>

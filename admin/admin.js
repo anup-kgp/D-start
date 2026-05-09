@@ -12,7 +12,15 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteField,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { normalizeValue, registrationMatchesSearch } from "./registration-helpers.js";
+import {
+  getAttendanceState,
+  attendanceLabel,
+  updatesForPresent,
+  updatesForUnmarked,
+} from "./attendance-state.js";
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -131,10 +139,6 @@ if (menuToggle && siteNav) {
   });
 }
 
-function normalizeValue(value) {
-  return String(value || "").toLowerCase();
-}
-
 function formatDateTime(value) {
   if (!value) return "-";
   if (typeof value === "object" && typeof value.seconds === "number") {
@@ -203,12 +207,21 @@ function openAdminDetails(reg) {
   renderAdminDetailsItem("Card Token", reg?.cardToken);
   renderAdminDetailsItem("Certificate Status", reg?.certificateStatus || "pending");
   renderAdminDetailsItem("Rank", reg?.rank);
+  const attendanceState = getAttendanceState(reg);
+  renderAdminDetailsItem(
+    "Attendance",
+    attendanceState === "present" ? "Present" : attendanceState === "absent" ? "Absent" : "Not marked"
+  );
 
+  adminDetailsModal.classList.toggle("admin-details-present", attendanceState === "present");
+  adminDetailsModal.classList.toggle("admin-details-absent", attendanceState === "absent");
   adminDetailsModal.hidden = false;
 }
 
 function closeAdminDetails() {
   if (!adminDetailsModal) return;
+  adminDetailsModal.classList.remove("admin-details-present");
+  adminDetailsModal.classList.remove("admin-details-absent");
   adminDetailsModal.hidden = true;
   if (adminDetailsPhoto) adminDetailsPhoto.removeAttribute("src");
   if (adminDetailsList) adminDetailsList.innerHTML = "";
@@ -894,6 +907,11 @@ function renderTable(list) {
 
   list.forEach((reg) => {
     const row = document.createElement("tr");
+    {
+      const st = getAttendanceState(reg);
+      if (st === "present") row.classList.add("admin-row-present");
+      if (st === "absent") row.classList.add("admin-row-absent");
+    }
 
     const selectCell = document.createElement("td");
     const checkbox = document.createElement("input");
@@ -934,9 +952,6 @@ function renderTable(list) {
 
     const phoneCell = document.createElement("td");
     phoneCell.textContent = reg.phone || "-";
-
-    const emailCell = document.createElement("td");
-    emailCell.textContent = reg.email || "-";
 
     const feeCell = document.createElement("td");
     feeCell.textContent = reg.fee ? `₹${reg.fee}` : "-";
@@ -1040,6 +1055,52 @@ function renderTable(list) {
     rankInput.className = "input-field";
     rankInput.value = reg.rank || "";
     rankCell.appendChild(rankInput);
+
+    const presentCell = document.createElement("td");
+    presentCell.classList.add("present-cell");
+    const presentButton = document.createElement("button");
+    presentButton.type = "button";
+    presentButton.className = "button button-secondary button-small admin-present-btn";
+    presentButton.title = "Toggle attendance at the event";
+
+    function syncPresentButton() {
+      const st = getAttendanceState(reg);
+      const on = st === "present";
+      presentButton.textContent = on ? "Present ✓" : "Mark present";
+      presentButton.classList.toggle("admin-present-btn--active", on);
+      presentButton.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    syncPresentButton();
+
+    presentButton.addEventListener("click", async () => {
+      const st = getAttendanceState(reg);
+      const nextIsPresent = st !== "present";
+      presentButton.disabled = true;
+      try {
+        const payload = nextIsPresent
+          ? updatesForPresent()
+          : updatesForUnmarked(deleteField);
+        await updateDoc(doc(db, "registrations", reg.id), payload);
+        if (nextIsPresent) {
+          reg.attendanceStatus = "present";
+          reg.markedPresent = true;
+        } else {
+          delete reg.attendanceStatus;
+          reg.markedPresent = false;
+        }
+        row.classList.remove("admin-row-present", "admin-row-absent");
+        const newSt = getAttendanceState(reg);
+        if (newSt === "present") row.classList.add("admin-row-present");
+        if (newSt === "absent") row.classList.add("admin-row-absent");
+        syncPresentButton();
+      } catch (error) {
+        console.error(error);
+        window.alert("Could not update attendance. Please try again.");
+      } finally {
+        presentButton.disabled = false;
+      }
+    });
+    presentCell.appendChild(presentButton);
 
     const actionCell = document.createElement("td");
     actionCell.classList.add("action-cell");
@@ -1155,11 +1216,11 @@ function renderTable(list) {
     genderCell.dataset.label = "Gender";
     eventCell.dataset.label = "Event";
     phoneCell.dataset.label = "Phone";
-    emailCell.dataset.label = "Email";
     feeCell.dataset.label = "Fee";
     fileCell.dataset.label = "Files";
     statusCell.dataset.label = "Certificate";
     rankCell.dataset.label = "Rank";
+    presentCell.dataset.label = "Present";
     actionCell.dataset.label = "Action";
 
     row.appendChild(selectCell);
@@ -1169,11 +1230,11 @@ function renderTable(list) {
     row.appendChild(genderCell);
     row.appendChild(eventCell);
     row.appendChild(phoneCell);
-    row.appendChild(emailCell);
     row.appendChild(feeCell);
     row.appendChild(fileCell);
     row.appendChild(statusCell);
     row.appendChild(rankCell);
+    row.appendChild(presentCell);
     row.appendChild(actionCell);
 
     tableBody.appendChild(row);
@@ -1231,10 +1292,7 @@ function applyFilters() {
   const eventValue = eventFilter ? eventFilter.value : "all";
 
   const filtered = registrations.filter((reg) => {
-    const matchesSearch = !searchValue
-      || normalizeValue(reg.name).includes(searchValue)
-      || normalizeValue(reg.phone).includes(searchValue)
-      || normalizeValue(reg.email).includes(searchValue);
+    const matchesSearch = registrationMatchesSearch(reg, searchValue);
     const currentStatus = reg.certificateStatus || "pending";
     const matchesStatus = statusValue === "all" || currentStatus === statusValue;
     const matchesGender = genderValue === "all" || reg.gender === genderValue;
@@ -1273,10 +1331,7 @@ function getFilteredRegistrations() {
   const eventValue = eventFilter ? eventFilter.value : "all";
 
   return registrations.filter((reg) => {
-    const matchesSearch = !searchValue
-      || normalizeValue(reg.name).includes(searchValue)
-      || normalizeValue(reg.phone).includes(searchValue)
-      || normalizeValue(reg.email).includes(searchValue);
+    const matchesSearch = registrationMatchesSearch(reg, searchValue);
     const currentStatus = reg.certificateStatus || "pending";
     const matchesStatus = statusValue === "all" || currentStatus === statusValue;
     const matchesGender = genderValue === "all" || reg.gender === genderValue;
@@ -1307,6 +1362,7 @@ if (exportCsvButton) {
         "Order Id",
         "Certificate Status",
         "Rank",
+        "Attendance",
         "Photo URL",
         "Govt ID URL",
         "Submitted At",
@@ -1329,6 +1385,7 @@ if (exportCsvButton) {
         reg.paymentOrderId || "",
         reg.certificateStatus || "pending",
         reg.rank || "",
+        attendanceLabel(reg),
         reg.photoUrl || "",
         reg.govtIdUrl || "",
         reg.createdAt?.seconds ? new Date(reg.createdAt.seconds * 1000).toLocaleString() : "",
